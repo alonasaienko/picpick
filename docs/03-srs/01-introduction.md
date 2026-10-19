@@ -8,6 +8,7 @@
 | 0.2 | 19.10.2026 | Yuliia Sharko | Перевірено USAID, скорочено вступ до двох сторінок. |
 | 0.3 | 19.10.2026 | Yuliia Sharko | Уточнено Scope, терміни, джерела й конвенції за рев’ю. |
 | 0.4 | 19.10.2026 | Yuliia Sharko | Додано Revision History, уточнено джерела й обсяг прототипу за повторним рев’ю. |
+| 0.5 | 19.10.2026 | Yuliia Sharko | Прибрано дублювання термінів, уточнено редакцію глосарія й тип CONTRIBUTING.md. |
 
 ## 1.1 Document Purpose
 
@@ -32,26 +33,15 @@ PicPick замінює відбір через обмін файлами та п
 
 ## 1.3 Definitions, Acronyms, and Abbreviations
 
-Єдине джерело термінів, сутностей, статусів і скорочень — [глосарій проєкту](../glossary.md). Нижче наведено основні; решта визначень доступна в глосарії.
-
-| Термін / скорочення | Значення |
-|---|---|
-| Вибір (`Selection`) | Сукупність лайків клієнта в галереї. |
-| Галерея (`Gallery`) | Набір фото з однієї зйомки, який фотограф показує одному клієнту. |
-| Клієнт (`Client`) | Замовник фотографій; переглядає прев'ю і обирає кадри. Акаунта не має. |
-| Оригінал (`Photo`) | Необроблений файл, завантажений фотографом. Клієнту ніколи не показується. |
-| Прев'ю (`PhotoPreview`) | Зменшена копія оригіналу з вотермаркою, яку бачить клієнт. |
-| Фотограф (`Photographer`) | Користувач з акаунтом, який створює галереї й завантажує фото. |
-
-**FR / NFR** — Functional / Non-functional Requirement; **SRS** — Software Requirements Specification, специфікація вимог.
+Терміни, сутності, статуси та скорочення визначено в [глосарії проєкту](../glossary.md).
 
 ## 1.4 References
 
 Normative — обов'язкове джерело; informative — довідкове. Перелік документів, використаних у цьому вступі:
 
-- [Глосарій PicPick](../glossary.md), команда PicPick; редакція `e6b26fa`, 19.10.2026, normative: терміни й назви.
+- [Глосарій PicPick](../glossary.md), команда PicPick; актуальна редакція, normative: терміни й назви.
 - [README PicPick](../../README.md), команда PicPick; редакція `0cf6330`, 19.10.2026, informative: продукт і стек.
-- [CONTRIBUTING.md](../../.github/CONTRIBUTING.md), команда PicPick; редакція `0cf6330`, 19.10.2026, normative: правила внесення змін.
+- [CONTRIBUTING.md](../../.github/CONTRIBUTING.md), команда PicPick; редакція `0cf6330`, 19.10.2026, informative: правила внесення змін.
 - [Software Requirements Specification Template](https://github.com/jam01/SRS-Template/blob/3965e951fa5ea1c1dd1bbc7a66b7f35f7e85c006/srs-template.md), jam01; редакція `3965e95`, 03.11.2025, informative: структура SRS.
 - [SRS for E-Government Training Management System (TMS), Final Report](https://web.archive.org/web/20250202142620/https://pdf.usaid.gov/pdf_docs/Pnacu897.pdf), AlliedSoft / Chemonics, AMIR / USAID; Final Report, січень 2003, архів 02.02.2025, informative: вступ на с. 2–3 (PDF 6–7). Зовнішні джерела перевірено 19.10.2026.
 
