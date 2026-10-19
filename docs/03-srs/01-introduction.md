@@ -49,7 +49,7 @@ PicPick допомагає фотографу отримати від клієн
 - [README PicPick](../../README.md), команда PicPick. Опис продукту, погодженого технологічного стеку та структури репозиторію.
 - [Таска #4: SRS розділ 1 — Introduction](https://github.com/alonasaienko/picpick/issues/4), команда PicPick. Обсяг і критерії готовності цього розділу.
 - [Software Requirements Specification Template](https://github.com/jam01/SRS-Template/blob/master/srs-template.md), jam01. Методичне джерело структури SRS; для вступу використано підрозділи 1.1–1.5. Дата звернення: 19.10.2026.
-- [Приклад SRS (USAID), архівна копія від 02.02.2025](https://web.archive.org/web/20250202142620/https://pdf.usaid.gov/pdf_docs/Pnacu897.pdf). Довідковий приклад оформлення, наведений у тасці #4.
+- [Software Requirements Specification for E-Government Training Management System (TMS), Final Report](https://web.archive.org/web/20250202142620/https://pdf.usaid.gov/pdf_docs/Pnacu897.pdf), AlliedSoft у співпраці з Chemonics International Inc., програма AMIR за фінансування USAID, січень 2003; архівна копія від 02.02.2025. Зі вступом на друкованих сторінках 2–3 (сторінки PDF 6–7) звірено підхід до викладу: призначення SRS як основи для узгодження вимог, проєктування, розробки й перевірки; опис меж через користувачів, основні можливості та очікувану користь; табличне подання термінів і наведення джерел. Нумерацію підрозділів 1.1–1.5 взято з шаблону jam01; предметні вимоги TMS до PicPick не переносяться. Дата звернення: 19.10.2026.
 
 ## 1.5 Document Overview
 
