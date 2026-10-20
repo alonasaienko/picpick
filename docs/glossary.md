@@ -86,6 +86,7 @@
 
 | Назва | Що це |
 |---|---|
+| Браузер (Browser) | Вебклієнт фотографа або клієнта: відображає сторінки та надсилає HTTPS-запити до Web App |
 | Web App | ASP.NET Core застосунок: Razor Pages (UI), REST API, Identity |
 | Worker | Python-сервіс, що створює прев'ю з вотермаркою |
 | RabbitMQ | Брокер повідомлень між Web App і Worker |
