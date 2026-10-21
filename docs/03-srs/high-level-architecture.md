@@ -24,7 +24,7 @@ flowchart LR
 
     browser -- "HTTPS: сторінки, REST API, файли" --> webapp
     webapp -- "SQL (EF Core)" --> postgres
-    webapp -- "S3 API: оригінали, прев'ю, архів" --> minio
+    webapp -- "S3 API: запис/читання оригіналів і прев'ю" --> minio
     webapp -. "AMQP: задача на обробку" .-> tasks
     tasks -. "AMQP: отримання задачі" .-> worker
     worker -- "S3 API: читає оригінал, записує прев'ю" --> minio
