@@ -5,24 +5,16 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 
 namespace WebApp.Models.ZoneA;
-
-/// <summary>Дані нової Gallery. Власник визначається сервером.</summary>
 public sealed class CreateGalleryRequest
 {
     private string? name;
-
-    /// <summary>Назва: 1–100 символів після видалення крайніх пробілів.</summary>
     [Required(ErrorMessage = "Укажіть назву галереї.")]
     [StringLength(100, MinimumLength = 1, ErrorMessage = "Назва має містити 1–100 символів.")]
     public string? Name { get => name; set => name = value?.Trim(); }
-
-    /// <summary>Момент завершення терміну з часовим поясом; зберігається в UTC.</summary>
     [Required(ErrorMessage = "Укажіть термін дії галереї.")]
     [JsonConverter(typeof(ExplicitOffsetDateTimeConverter))]
     public DateTimeOffset? ExpiresAt { get; set; }
 }
-
-// Не трактуємо дату без часового поясу як локальний час сервера.
 internal sealed class ExplicitOffsetDateTimeConverter : JsonConverter<DateTimeOffset?>
 {
     public override DateTimeOffset? Read(ref Utf8JsonReader reader, Type type, JsonSerializerOptions options)

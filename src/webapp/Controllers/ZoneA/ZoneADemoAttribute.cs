@@ -2,15 +2,10 @@ using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace WebApp.Controllers.ZoneA;
-
-/// <summary>Локальне оформлення помилок заглушок до появи інфраструктури #23.</summary>
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class ZoneADemoAttribute : ActionFilterAttribute
 {
-    /// <summary>Виконується перед автоматичною відповіддю ApiController (-2000).</summary>
     public ZoneADemoAttribute() => Order = -4000;
-
-    /// <inheritdoc />
     public override void OnActionExecuting(ActionExecutingContext context)
     {
         var http = context.HttpContext;
@@ -57,7 +52,6 @@ public sealed class ZoneADemoAttribute : ActionFilterAttribute
     private static string FieldName(string key)
     {
         var name = key.StartsWith("$.", StringComparison.Ordinal) ? key[2..] : key;
-        // Не повертаємо довільні імена властивостей із зламаного JSON.
         return name.ToLowerInvariant() switch
         {
             "name" => "name", "expiresat" => "expiresAt", "id" => "id",

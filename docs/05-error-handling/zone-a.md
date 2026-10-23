@@ -50,7 +50,7 @@
 dotnet run --project src/webapp/WebApp.csproj --launch-profile http
 ```
 
-Відкрити `http://localhost:5056/swagger`. XML-коментарі й `[ProducesResponseType]` показують описи, DTO та всі заявлені HTTP-коди. Поле `demoError` залишати порожнім для звичайного сценарію; воно діє лише в Development і не є частиною цільового API. В іншому середовищі непорожній `demoError` дає 400.
+Відкрити `http://localhost:5056/swagger`. Атрибути `[ProducesResponseType]` показують DTO та всі заявлені HTTP-коди; пояснення наведено в таблицях цього документа. Поле `demoError` залишати порожнім для звичайного сценарію: допустимі значення 401, 403, 429, 500; для POST створення також 415. Воно діє лише в Development і не є частиною цільового API. В іншому середовищі непорожній `demoError` дає 400. XML-коментарі вилучено за погодженим стилем коду.
 
 Тестові UUID мають формат `00000000-0000-0000-0000-000000000NNN`:
 
@@ -90,6 +90,6 @@ dotnet run --project src/webapp/WebApp.csproj --launch-profile http
 ./tests/webapp/zone-a-smoke.ps1
 ```
 
-Скрипт перевіряє HTTP-контракт, валідацію, нормалізацію UTC, межі довжини назви, нерозкриття чужих галерей, переходи станів, видалення та описи OpenAPI. Нові тестові галереї прибираються; початкові Ready/Shared можуть залишитися Finalized до перезапуску.
+Скрипт перевіряє HTTP-контракт, валідацію, нормалізацію UTC, межі довжини назви, нерозкриття чужих галерей, переходи станів, видалення та контракти OpenAPI. Нові тестові галереї прибираються; початкові Ready/Shared можуть залишитися Finalized до перезапуску.
 
-Механізми ASP.NET Core: [автоматична валідація API](https://learn.microsoft.com/en-us/aspnet/core/web-api/?view=aspnetcore-8.0#automatic-http-400-responses), [XML-коментарі Swashbuckle](https://github.com/domaindrivendev/Swashbuckle.AspNetCore/blob/v6.6.2/README.md#include-descriptions-from-xml-comments).
+Механізми ASP.NET Core: [автоматична валідація API](https://learn.microsoft.com/en-us/aspnet/core/web-api/?view=aspnetcore-8.0#automatic-http-400-responses).

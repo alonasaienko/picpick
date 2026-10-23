@@ -27,7 +27,6 @@ internal static class GalleryProblems
             Type = status == 429 ? "https://tools.ietf.org/html/rfc6585#section-4"
                 : $"https://tools.ietf.org/html/rfc9110#section-{section}",
             Title = title, Status = status, Detail = detail,
-            // Не копіюємо query string або введені значення в помилку.
             Instance = context.Request.Path,
             ErrorCode = code,
             TraceId = Activity.Current?.Id ?? context.TraceIdentifier,
