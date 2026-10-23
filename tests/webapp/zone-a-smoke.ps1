@@ -132,6 +132,9 @@ try {
     Assert-True ($null -ne $schema.paths.'/api/galleries'.post.responses.'201') 'Create response missing in OpenAPI'
     Assert-True ($schema.paths.'/api/galleries'.post.responses.'422'.description -match 'GALLERY_EXPIRES_AT_INVALID') 'Swagger domain error missing'
     Assert-True ($schema.paths.'/api/galleries/{id}/finalize'.post.responses.'200'.description -match 'вже фіналізовано') 'Swagger repeat finalize description missing'
+    Assert-True ($schema.components.schemas.CreateGalleryRequest.description -match 'Gallery') 'XML DTO summary missing'
+    Assert-True ($schema.components.schemas.CreateGalleryRequest.properties.name.description -match '1–100') 'XML name constraints missing'
+    Assert-True ($schema.components.schemas.CreateGalleryRequest.properties.expiresAt.description -match 'ISO 8601.*30') 'XML expiresAt constraints missing'
 }
 finally {
     $deleted = Send-Api DELETE "/api/galleries/$id"
