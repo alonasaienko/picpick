@@ -1,10 +1,17 @@
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using WebApp.Models.ZoneA;
 
 namespace WebApp.Controllers.ZoneA;
 [AttributeUsage(AttributeTargets.Class)]
 public sealed class ZoneADemoAttribute : ActionFilterAttribute
 {
+    private static readonly HashSet<string> ValidationMessages = typeof(CreateGalleryRequest)
+        .GetProperties().SelectMany(p => p.GetCustomAttributes<ValidationAttribute>())
+        .Select(a => a.ErrorMessage).OfType<string>().ToHashSet(StringComparer.Ordinal);
+
     public ZoneADemoAttribute() => Order = -4000;
     public override void OnActionExecuting(ActionExecutingContext context)
     {
@@ -21,7 +28,8 @@ public sealed class ZoneADemoAttribute : ActionFilterAttribute
 
             var errors = context.ModelState.Where(p => p.Value?.Errors.Count > 0)
                 .GroupBy(p => FieldName(p.Key))
-                .ToDictionary(g => g.Key, g => new[] { "Поле відсутнє або не відповідає контракту запиту." });
+                .ToDictionary(g => g.Key, g => g.SelectMany(p => p.Value!.Errors)
+                    .Select(e => ValidationMessage(g.Key, e)).Distinct().ToArray());
             context.Result = GalleryProblems.Create(http, 400, "VALIDATION_FAILED",
                 "Перевірте обов'язкові поля, типи та довжину значень.", errors);
             return;
@@ -56,6 +64,18 @@ public sealed class ZoneADemoAttribute : ActionFilterAttribute
         {
             "name" => "name", "expiresat" => "expiresAt", "id" => "id",
             "demoerror" => "demoError", _ => "body"
+        };
+    }
+
+    private static string ValidationMessage(string field, ModelError error)
+    {
+        if (ValidationMessages.Contains(error.ErrorMessage)) return error.ErrorMessage;
+        return field switch
+        {
+            "name" => "Передайте назву галереї як текст довжиною 1–100 символів.",
+            "expiresAt" => "Укажіть дату ISO 8601 з часовим поясом, наприклад 2026-12-01T12:00:00Z.",
+            "id" => "Укажіть ідентифікатор галереї у форматі UUID.",
+            _ => "Передайте коректний JSON із полями name та expiresAt."
         };
     }
 

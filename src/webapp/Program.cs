@@ -3,7 +3,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(options => options.OperationFilter<WebApp.Controllers.ZoneA.GalleryOpenApiFilter>());
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();

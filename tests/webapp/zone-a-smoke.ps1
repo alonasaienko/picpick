@@ -57,6 +57,18 @@ try {
         Assert-True ($null -ne $response.Data.errors) 'Validation errors missing'
     }
     Assert-Problem (Send-Api GET '/api/galleries/invalid-uuid') 400 'VALIDATION_FAILED'
+    $missingFields = Send-Api POST '/api/galleries' '{}'
+    Assert-True ('Укажіть назву галереї.' -in $missingFields.Data.errors.name) 'Required name message lost'
+    Assert-True ('Укажіть термін дії галереї.' -in $missingFields.Data.errors.expiresAt) 'Required expiresAt message lost'
+    $longName = Send-Api POST '/api/galleries' (@{ name = ('a' * 101); expiresAt = $future } | ConvertTo-Json)
+    Assert-True ('Назва має містити 1–100 символів.' -in $longName.Data.errors.name) 'Name length message lost'
+    $invalidDate = Send-Api POST '/api/galleries' '{"name":"x","expiresAt":"private-invalid-date"}'
+    Assert-True (($invalidDate.Data.errors.expiresAt -join ' ') -match 'ISO 8601') 'Date format hint missing'
+    Assert-True (($invalidDate.Data.errors.expiresAt -join ' ') -notmatch 'private-invalid-date|JsonException') 'Validation leaks input or exception'
+    $invalidId = Send-Api GET '/api/galleries/invalid-uuid'
+    Assert-True (($invalidId.Data.errors.id -join ' ') -match 'UUID') 'UUID format hint missing'
+    $invalidBody = Send-Api POST '/api/galleries' '{'
+    Assert-True (($invalidBody.Data.errors.body -join ' ') -match 'JSON') 'JSON format hint missing'
     $offsetDate = [DateTimeOffset]::UtcNow.AddDays(1).ToOffset([TimeSpan]::FromHours(3))
     $boundary = Send-Api POST '/api/galleries' (@{ name = ('a' * 100); expiresAt = $offsetDate.ToString('O') } | ConvertTo-Json)
     try {
@@ -105,13 +117,21 @@ try {
         $schema.paths.'/api/galleries/{id}/finalize'.post)
     foreach ($operation in $operations) {
         Assert-True ($null -ne $operation) 'Endpoint missing in OpenAPI'
+        Assert-True (-not [string]::IsNullOrWhiteSpace($operation.summary)) 'Swagger endpoint summary missing'
         foreach ($status in @('400', '401', '403', '429', '500')) {
             Assert-True ($null -ne $operation.responses.$status.content.'application/problem+json') "OpenAPI missing $status"
+        }
+        foreach ($response in $operation.responses.PSObject.Properties) {
+            if ([int]$response.Name -ge 400) {
+                Assert-True ($response.Value.description -match '^[A-Z][A-Z_]+:') 'Swagger errorCode or explanation missing'
+            }
         }
     }
     Assert-True ($null -ne $schema.components.schemas.GalleryProblemDetails.properties.errorCode) 'OpenAPI missing errorCode schema'
     Assert-True ($null -ne $schema.components.schemas.GalleryProblemDetails.properties.traceId) 'OpenAPI missing traceId schema'
     Assert-True ($null -ne $schema.paths.'/api/galleries'.post.responses.'201') 'Create response missing in OpenAPI'
+    Assert-True ($schema.paths.'/api/galleries'.post.responses.'422'.description -match 'GALLERY_EXPIRES_AT_INVALID') 'Swagger domain error missing'
+    Assert-True ($schema.paths.'/api/galleries/{id}/finalize'.post.responses.'200'.description -match 'вже фіналізовано') 'Swagger repeat finalize description missing'
 }
 finally {
     $deleted = Send-Api DELETE "/api/galleries/$id"
