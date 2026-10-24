@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WebApp.Controllers.ZoneA;
 using WebApp.Models.ZoneA;
+using WebApp.Infrastructure;
 
 namespace WebApp.Controllers;
 
@@ -9,11 +10,11 @@ namespace WebApp.Controllers;
 [ApiController]
 [Route("api/galleries")]
 [ZoneADemo]
-[ProducesResponseType(typeof(GalleryProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
-[ProducesResponseType(typeof(GalleryProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
-[ProducesResponseType(typeof(GalleryProblemDetails), StatusCodes.Status403Forbidden, "application/problem+json")]
-[ProducesResponseType(typeof(GalleryProblemDetails), StatusCodes.Status429TooManyRequests, "application/problem+json")]
-[ProducesResponseType(typeof(GalleryProblemDetails), StatusCodes.Status500InternalServerError, "application/problem+json")]
+[ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
+[ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
+[ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status403Forbidden, "application/problem+json")]
+[ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status429TooManyRequests, "application/problem+json")]
+[ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status500InternalServerError, "application/problem+json")]
 public sealed class GalleriesController : ControllerBase
 {
     /// <summary>Створити власну галерею у статусі Draft без фото.</summary>
@@ -30,14 +31,14 @@ public sealed class GalleriesController : ControllerBase
     /// <response code="500">INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.</response>
     [HttpPost]
     [ProducesResponseType(typeof(GalleryResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(GalleryProblemDetails), StatusCodes.Status415UnsupportedMediaType, "application/problem+json")]
-    [ProducesResponseType(typeof(GalleryProblemDetails), StatusCodes.Status422UnprocessableEntity, "application/problem+json")]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status415UnsupportedMediaType, "application/problem+json")]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status422UnprocessableEntity, "application/problem+json")]
     public ActionResult<GalleryResponse> Create([FromBody] CreateGalleryRequest request, [FromQuery] string? demoError = null)
     {
         var now = DateTimeOffset.UtcNow;
         var expiresAt = request.ExpiresAt!.Value.ToUniversalTime();
         if (expiresAt <= now || expiresAt > now.AddDays(30))
-            return GalleryProblems.Create(HttpContext, 422, "GALLERY_EXPIRES_AT_INVALID",
+            throw new DomainValidationException("GALLERY_EXPIRES_AT_INVALID",
                 "Термін дії має бути в майбутньому й не далі ніж через 30 діб.",
                 new() { ["expiresAt"] = new[] { "Укажіть допустимий майбутній момент завершення терміну." } });
 
@@ -81,13 +82,14 @@ public sealed class GalleriesController : ControllerBase
     /// <response code="500">INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.</response>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(GalleryResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(GalleryProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
     public ActionResult<GalleryResponse> Get(Guid id, [FromQuery] string? demoError = null)
     {
         lock (GalleryDemoStore.Sync)
         {
             var gallery = GalleryDemoStore.FindOwned(id, DateTimeOffset.UtcNow);
-            return gallery is null ? GalleryProblems.NotFound(HttpContext) : Ok(gallery);
+            if (gallery is null) throw new NotFoundException("GALLERY_NOT_FOUND", "Галерею не знайдено або вона вам недоступна.");
+            return Ok(gallery);
         }
     }
     /// <summary>Фіналізувати чинну Ready або Shared; повтор Finalized також успішний.</summary>
@@ -104,16 +106,16 @@ public sealed class GalleriesController : ControllerBase
     /// <response code="500">INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.</response>
     [HttpPost("{id}/finalize")]
     [ProducesResponseType(typeof(FinalizeGalleryResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(GalleryProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
-    [ProducesResponseType(typeof(GalleryProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status409Conflict, "application/problem+json")]
     public ActionResult<FinalizeGalleryResponse> FinalizeGallery(Guid id, [FromQuery] string? demoError = null)
     {
         lock (GalleryDemoStore.Sync)
         {
             var gallery = GalleryDemoStore.FindOwned(id, DateTimeOffset.UtcNow);
-            if (gallery is null) return GalleryProblems.NotFound(HttpContext);
+            if (gallery is null) throw new NotFoundException("GALLERY_NOT_FOUND", "Галерею не знайдено або вона вам недоступна.");
             if (gallery.Status is not ("Ready" or "Shared" or "Finalized"))
-                return GalleryProblems.Create(HttpContext, 409, "GALLERY_NOT_FINALIZABLE",
+                throw new ConflictException("GALLERY_NOT_FINALIZABLE",
                     "Фіналізація доступна лише для чинної галереї Ready або Shared.");
             var repeated = gallery.Status == "Finalized";
             var finalized = gallery with { Status = "Finalized" };
@@ -135,13 +137,13 @@ public sealed class GalleriesController : ControllerBase
     /// <response code="500">INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.</response>
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    [ProducesResponseType(typeof(GalleryProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
+    [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
     public IActionResult Delete(Guid id, [FromQuery] string? demoError = null)
     {
         lock (GalleryDemoStore.Sync)
         {
             if (GalleryDemoStore.FindOwned(id, DateTimeOffset.UtcNow) is null)
-                return GalleryProblems.NotFound(HttpContext);
+                throw new NotFoundException("GALLERY_NOT_FOUND", "Галерею не знайдено або вона вам недоступна.");
             GalleryDemoStore.Galleries.Remove(id);
             return NoContent();
         }

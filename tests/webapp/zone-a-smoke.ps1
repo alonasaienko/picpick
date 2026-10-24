@@ -127,8 +127,8 @@ try {
             }
         }
     }
-    Assert-True ($null -ne $schema.components.schemas.GalleryProblemDetails.properties.errorCode) 'OpenAPI missing errorCode schema'
-    Assert-True ($null -ne $schema.components.schemas.GalleryProblemDetails.properties.traceId) 'OpenAPI missing traceId schema'
+    Assert-True ($null -ne $schema.components.schemas.ApiProblemDetails.properties.errorCode) 'OpenAPI missing errorCode schema'
+    Assert-True ($null -ne $schema.components.schemas.ApiProblemDetails.properties.traceId) 'OpenAPI missing traceId schema'
     Assert-True ($null -ne $schema.paths.'/api/galleries'.post.responses.'201') 'Create response missing in OpenAPI'
     Assert-True ($schema.paths.'/api/galleries'.post.responses.'422'.description -match 'GALLERY_EXPIRES_AT_INVALID') 'Swagger domain error missing'
     Assert-True ($schema.paths.'/api/galleries/{id}/finalize'.post.responses.'200'.description -match 'вже фіналізовано') 'Swagger repeat finalize description missing'
