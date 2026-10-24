@@ -30,27 +30,27 @@ sequenceDiagram
     Events--)First: Результат для фото 299
     Events--)Second: Результат для фото 300
     par Транзакція 1
-        First->>DB: BEGIN; прочитати version; оновити Photo 299;<br/>порахувати завершені фото
+        First->>DB: BEGIN, прочитати version, оновити Photo 299,<br/>порахувати завершені фото
         DB-->>First: version = 7, завершено 299 із 300
     and Транзакція 2
-        Second->>DB: BEGIN; прочитати version; оновити Photo 300;<br/>порахувати завершені фото
+        Second->>DB: BEGIN, прочитати version, оновити Photo 300,<br/>порахувати завершені фото
         DB-->>Second: version = 7, завершено 299 із 300
     end
-    First->>DB: UPDATE Gallery: Processing, version = 8<br/>WHERE version = 7; COMMIT
+    First->>DB: UPDATE Gallery: Processing, version = 8<br/>WHERE version = 7, COMMIT
     DB-->>First: 1 рядок, зміни збережено
     First->>Events: ack після COMMIT
     Second->>DB: UPDATE Gallery WHERE version = 7
     DB-->>Second: 0 рядків, версія вже змінилася
-    Second->>DB: ROLLBACK усієї транзакції 2;<br/>перечитати чинність Gallery
+    Second->>DB: ROLLBACK усієї транзакції 2,<br/>перечитати чинність Gallery
     DB-->>Second: Поточний стан або відсутність галереї
     alt Gallery = Processing, термін чинний
-        Second->>DB: BEGIN; прочитати version = 8;<br/>повторити оновлення Photo 300 і підрахунок
+        Second->>DB: BEGIN, прочитати version = 8,<br/>повторити оновлення Photo 300 і підрахунок
         DB-->>Second: Завершено 300 із 300
-        Second->>DB: UPDATE Gallery: Ready, version = 9<br/>WHERE version = 8; COMMIT
+        Second->>DB: UPDATE Gallery: Ready, version = 9<br/>WHERE version = 8, COMMIT
         DB-->>Second: 1 рядок, Gallery.Status = Ready
         Second->>Events: ack після COMMIT
     else Галерею видалено, прострочено або закрито
-        Second->>Second: Не відновлювати дані;<br/>прев'ю підлягає очищенню за FR-203
+        Second->>Second: Не відновлювати дані,<br/>прев'ю підлягає очищенню за FR-203
         Second->>Events: ack, результат більше не застосовується
     end
 ```
