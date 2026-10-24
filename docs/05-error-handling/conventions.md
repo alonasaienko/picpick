@@ -26,6 +26,7 @@
 - Стиль **UPPER_SNAKE_CASE**, як у [глосарії](../glossary.md).
 - Код починається з **назви сутності** з глосарія, якої стосується помилка: `GALLERY_…`, `PHOTO_…`, `SHARE_LINK_…`, `SELECTION_…`. Далі йде, що сталося: `GALLERY_NOT_FOUND`, `PHOTO_FORMAT_NOT_SUPPORTED`, `SELECTION_ALREADY_SUBMITTED`.
 - Загальні помилки, не прив'язані до сутності, мають фіксовані коди без префікса: `VALIDATION_FAILED`, `UNAUTHENTICATED`, `RATE_LIMIT_EXCEEDED`, `INTERNAL_ERROR`.
+- Для відповідей без коду контролера спільний обробник використовує `ACCESS_FORBIDDEN` (403), `RESOURCE_NOT_FOUND` (404), `METHOD_NOT_ALLOWED` (405), `NOT_ACCEPTABLE` (406), `RESOURCE_CONFLICT` (409), `UNSUPPORTED_MEDIA_TYPE` (415). Коди конкретної сутності мають перевагу.
 - Кожна зона перелічує свої коди в таблиці свого файлу `zone-X.md`. Один код означає одну ситуацію у всьому API.
 
 ## 3. Коли який HTTP-код
@@ -126,3 +127,19 @@
 - ознака того, чи існує акаунт або чужа галерея.
 
 **Чому.** Такі деталі не допомагають користувачу, зате підказують нападнику, як влаштована система: яка база, які таблиці, де лежать файли, які email зареєстровано. Деякі з них — персональні дані (NFR-102). Для 500 повертаємо повну стандартну структуру, але із загальними `title` і `detail` (розділ 1), а повну інформацію про виняток записуємо в журнал сервера під тим самим `traceId`. Глобальну обробку винятків описано в задачі «Глобальна обробка помилок у Web App».
+
+## 7. Використання в контролерах
+
+Спільний код — `src/webapp/Infrastructure/ErrorHandlingExtensions.cs`. У `Program.cs` сервіси додаються через `AddApiErrorHandling()`, а `UseApiErrorHandling()` викликається після `UseRouting()` і перед авторизацією. Обробка діє для контролерів і адрес `/api`; Razor Pages зберігають HTML-обробник помилок.
+
+| Ситуація | Що використати |
+|---|---|
+| Ресурс не знайдено або чужий | `throw new NotFoundException("GALLERY_NOT_FOUND", "Галерею не знайдено або вона вам недоступна.");` → 404 |
+| Стан не дозволяє дію | `throw new ConflictException(errorCode, detail);` → 409 |
+| Порушення бізнес-правила | `throw new DomainValidationException(errorCode, detail, errors);` → 422; `errors` — словник полів і масивів повідомлень |
+
+У власні винятки передають лише безпечні повідомлення для користувача. Неочікуваний виняток автоматично стає 500; повний виняток записується в журнал із тим самим `traceId`. `instance` має вигляд `urn:request:{traceId}` і не містить маршруту чи query string.
+
+Валідація DTO в `[ApiController]` автоматично повертає 400 з `errors`, зберігаючи повідомлення атрибутів. Для явної відповіді є `HttpContext.ApiError(status, errorCode, detail, errors)`; порожні `NotFound()`, `BadRequest()` та інші результати також отримують спільний формат. Для 429 контролер або політика частоти задає `Retry-After`. XML-описи Swagger вже підключено в проєкті.
+
+Перевірка: `dotnet run --project tests/webapp/ErrorHandlingChecks/ErrorHandlingChecks.csproj`. Тестовий контролер існує лише в цьому проєкті й перевіряє обробку в Development та Production. Регресійна перевірка галерей на запущеному Web App: `./tests/webapp/zone-a-smoke.ps1` (PowerShell 7).
