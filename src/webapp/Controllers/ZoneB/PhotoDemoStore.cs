@@ -13,22 +13,30 @@ internal static class PhotoDemoStore
     internal static IEnumerable<PhotoResponse> ForGallery(Guid galleryId) =>
         Photos.Values.Where(e => e.GalleryId == galleryId).Select(e => e.Photo);
 
+    // По 10 фото на кожну тестову галерею, крім Draft, — як PhotoCount у GalleryDemoStore зони A.
+    // Тому photoCount у деталях галереї і total у прогресі збігаються.
     private static Dictionary<Guid, Entry> Seed()
     {
-        var processing = Guid.Parse("00000000-0000-0000-0000-000000000102");
-        var ready = Guid.Parse("00000000-0000-0000-0000-000000000103");
-        var seed = new (Guid Gallery, string Name, string Status, string? Reason)[]
+        var statuses = new (int Gallery, string[] Photos)[]
         {
-            (ready, "IMG_0001.jpg", "Ready", null),
-            (ready, "IMG_0002.NEF", "Failed", "Файл пошкоджено"),
-            (processing, "IMG_0003.jpg", "Processing", null),
-            (processing, "IMG_0004.jpg", "Uploaded", null),
+            (103, new[] { "Ready", "Failed", "Ready", "Ready", "Ready", "Ready", "Ready", "Ready", "Ready", "Ready" }),
+            (102, new[] { "Ready", "Ready", "Ready", "Ready", "Processing", "Processing", "Processing", "Uploaded", "Uploaded", "Uploaded" }),
+            (104, Enumerable.Repeat("Ready", 10).ToArray()),
+            (105, Enumerable.Repeat("Ready", 10).ToArray()),
+            (106, Enumerable.Repeat("Ready", 10).ToArray()),
         };
         var result = new Dictionary<Guid, Entry>();
-        for (var i = 0; i < seed.Length; i++)
+        var next = 201; // 201 — Ready і 202 — Failed у галереї 103 (див. zone-b.md)
+        foreach (var (gallery, photos) in statuses)
         {
-            var id = Guid.Parse($"00000000-0000-0000-0000-{201 + i:D12}");
-            result[id] = new(seed[i].Gallery, new(id, seed[i].Name, seed[i].Status, seed[i].Reason));
+            var galleryId = Guid.Parse($"00000000-0000-0000-0000-{gallery:D12}");
+            foreach (var status in photos)
+            {
+                var id = Guid.Parse($"00000000-0000-0000-0000-{next:D12}");
+                var name = status == "Failed" ? $"IMG_{next - 200:D4}.NEF" : $"IMG_{next - 200:D4}.jpg";
+                result[id] = new(galleryId, new(id, name, status, status == "Failed" ? "Файл пошкоджено" : null));
+                next++;
+            }
         }
         return result;
     }

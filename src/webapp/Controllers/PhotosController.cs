@@ -57,11 +57,6 @@ public sealed class PhotosController : ControllerBase
                 return GalleryProblems.Create(HttpContext, 422, "PHOTO_BATCH_LIMIT_EXCEEDED",
                     "Один запит може містити до 50 файлів сумарним обсягом до 1 ГБ.");
 
-            var current = PhotoDemoStore.ForGallery(galleryId).Count();
-            if (current + files.Count > MaxPhotosPerGallery)
-                return GalleryProblems.Create(HttpContext, 422, "GALLERY_PHOTO_LIMIT_EXCEEDED",
-                    $"У галереї може бути до 1000 фото. Можна додати ще {MaxPhotosPerGallery - current}.");
-
             var accepted = new List<AcceptedPhoto>();
             var rejected = new List<RejectedFile>();
             for (var i = 0; i < files.Count; i++)
@@ -76,6 +71,13 @@ public sealed class PhotosController : ControllerBase
                     "Жоден файл не прийнято.",
                     rejected.ToDictionary(r => $"files[{r.Index}]", r => new[] { $"{r.FileName}: {r.Message}" }));
 
+            // Ліміт галереї рахується за прийнятими файлами, а не за всіма надісланими (FR-202).
+            var current = PhotoDemoStore.ForGallery(galleryId).Count();
+            if (current + accepted.Count > MaxPhotosPerGallery)
+                return GalleryProblems.Create(HttpContext, 422, "GALLERY_PHOTO_LIMIT_EXCEEDED",
+                    $"У галереї може бути до 1000 фото. Можна додати ще {MaxPhotosPerGallery - current}.");
+
+            // Сховище змінюється лише після всіх перевірок.
             foreach (var photo in accepted)
                 PhotoDemoStore.Photos[photo.PhotoId] = new(galleryId, new(photo.PhotoId, photo.FileName, "Uploaded", null));
             GalleryDemoStore.Galleries[galleryId] = new(GalleryDemoStore.PhotographerId,
