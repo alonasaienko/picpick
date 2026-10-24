@@ -1,11 +1,10 @@
-using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
-using System.Reflection;
 using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Filters;
+using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 
 namespace WebApp.Infrastructure;
 
@@ -15,9 +14,17 @@ public static class ErrorHandlingExtensions
     {
         services.AddProblemDetails();
         services.AddExceptionHandler<ApiExceptionHandler>();
+        services.AddLogging(logging => logging.AddFilter("Microsoft.AspNetCore.Diagnostics.ExceptionHandlerMiddleware", LogLevel.None));
+        services.Configure<JsonOptions>(options => options.AllowInputFormatterExceptionMessages = false);
         services.Configure<ApiBehaviorOptions>(options =>
             options.InvalidModelStateResponseFactory = ValidationResponse);
-        services.Configure<MvcOptions>(options => options.Filters.Add<ApiErrorResultFilter>());
+        services.Configure<MvcOptions>(options =>
+        {
+            options.Filters.Add<ApiErrorResultFilter>();
+            options.ModelMetadataDetailsProviders.Add(new SystemTextJsonValidationMetadataProvider());
+            options.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((_, _) => "Перевірте формат значення поля.");
+            options.ModelBindingMessageProvider.SetNonPropertyAttemptedValueIsInvalidAccessor(_ => "Перевірте формат значення.");
+        });
         return services;
     }
 
@@ -69,7 +76,7 @@ public static class ErrorHandlingExtensions
             Status = status,
             Type = status == 429 ? "https://tools.ietf.org/html/rfc6585#section-4"
                 : $"https://tools.ietf.org/html/rfc9110#section-{section}",
-            Title = code == "GALLERY_NOT_FOUND" ? "Галерею не знайдено" : title,
+            Title = title,
             Detail = status >= 500 ? defaultDetail : detail ?? defaultDetail,
             Instance = $"urn:request:{traceId}",
             ErrorCode = status >= 500 ? "INTERNAL_ERROR" : code ?? defaultCode,
@@ -87,48 +94,29 @@ public static class ErrorHandlingExtensions
 
     private static IActionResult ValidationResponse(ActionContext context)
     {
-        var fields = context.ActionDescriptor.Parameters
-            .SelectMany(p => p.ParameterType.GetProperties().Select(property =>
-                (Name: property.Name, Type: property.PropertyType,
-                    Messages: property.GetCustomAttributes<ValidationAttribute>().ToDictionary(
-                        a => a.FormatErrorMessage(property.Name), a => ValidationMessage(a, property.Name))))
-                .Append((Name: p.Name, Type: p.ParameterType, Messages: new Dictionary<string, string>())))
-            .GroupBy(p => p.Name, StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
         var errors = new Dictionary<string, string[]>();
         foreach (var entry in context.ModelState.Where(p => p.Value!.Errors.Count > 0))
         {
-            var key = entry.Key.StartsWith("$.", StringComparison.Ordinal) ? entry.Key[2..] : entry.Key;
-            var known = fields.TryGetValue(key, out var field);
-            var name = known ? JsonNamingPolicy.CamelCase.ConvertName(field.Name) : "body";
-            var type = known ? Nullable.GetUnderlyingType(field.Type) ?? field.Type : null;
-            var fallback = type == typeof(Guid) ? "Укажіть ідентифікатор у форматі UUID."
-                : type == typeof(DateTimeOffset) || type == typeof(DateTime) ? "Укажіть дату ISO 8601 з часовим поясом."
-                : known ? $"Перевірте формат поля {name}." : "Передайте коректне тіло JSON.";
-            var messages = entry.Value!.Errors.Select(error => known && field.Messages.TryGetValue(error.ErrorMessage, out var message)
-                ? message : fallback);
+            var name = string.IsNullOrEmpty(entry.Key) || entry.Key.StartsWith('$')
+                ? "body" : JsonNamingPolicy.CamelCase.ConvertName(entry.Key);
+            var messages = entry.Value!.Errors.Select(error => error.Exception is null && !string.IsNullOrWhiteSpace(error.ErrorMessage)
+                ? error.ErrorMessage : "Передайте коректне тіло JSON з правильними типами значень.");
             errors[name] = errors.GetValueOrDefault(name, Array.Empty<string>()).Concat(messages).Distinct().ToArray();
         }
         return context.HttpContext.ApiError(400, "VALIDATION_FAILED", "Перевірте обов'язкові поля, типи та довжину значень.", errors);
     }
 
-    private static string ValidationMessage(ValidationAttribute attribute, string name) => attribute.ErrorMessage is not null
-        ? attribute.FormatErrorMessage(name) : attribute switch
-        {
-            RequiredAttribute => "Укажіть значення поля.",
-            MaxLengthAttribute max => $"Максимальна довжина — {max.Length} символів.",
-            MinLengthAttribute min => $"Мінімальна довжина — {min.Length} символів.",
-            StringLengthAttribute length => $"Довжина має бути від {length.MinimumLength} до {length.MaximumLength} символів.",
-            RangeAttribute range => $"Значення має бути від {range.Minimum} до {range.Maximum}.",
-            _ => "Значення не відповідає обмеженням поля."
-        };
 }
 
 internal sealed class ApiExceptionHandler(ILogger<ApiExceptionHandler> logger) : IExceptionHandler
 {
     public async ValueTask<bool> TryHandleAsync(HttpContext http, Exception exception, CancellationToken cancellationToken)
     {
-        if (!http.Items.ContainsKey(typeof(ApiExceptionHandler))) return false;
+        if (!http.Items.ContainsKey(typeof(ApiExceptionHandler)))
+        {
+            logger.LogError(exception, "Помилка сторінки. TraceId: {TraceId}", Activity.Current?.Id ?? http.TraceIdentifier);
+            return false;
+        }
         var expected = exception as ApiException;
         var problem = ErrorHandlingExtensions.CreateProblem(http, expected?.StatusCode ?? 500,
             expected?.ErrorCode, expected?.Message, expected?.Errors);

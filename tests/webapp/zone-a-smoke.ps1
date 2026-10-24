@@ -63,10 +63,10 @@ try {
     $longName = Send-Api POST '/api/galleries' (@{ name = ('a' * 101); expiresAt = $future } | ConvertTo-Json)
     Assert-True ('Назва має містити 1–100 символів.' -in $longName.Data.errors.name) 'Name length message lost'
     $invalidDate = Send-Api POST '/api/galleries' '{"name":"x","expiresAt":"private-invalid-date"}'
-    Assert-True (($invalidDate.Data.errors.expiresAt -join ' ') -match 'ISO 8601') 'Date format hint missing'
-    Assert-True (($invalidDate.Data.errors.expiresAt -join ' ') -notmatch 'private-invalid-date|JsonException') 'Validation leaks input or exception'
+    Assert-True (($invalidDate.Data.errors.body -join ' ') -match 'JSON') 'JSON type error missing'
+    Assert-True ($invalidDate.Text -notmatch 'private-invalid-date|JsonException') 'Validation leaks input or exception'
     $invalidId = Send-Api GET '/api/galleries/invalid-uuid'
-    Assert-True (($invalidId.Data.errors.id -join ' ') -match 'UUID') 'UUID format hint missing'
+    Assert-True (($invalidId.Data.errors.id -join ' ') -match 'формат') 'Invalid route parameter message missing'
     $invalidBody = Send-Api POST '/api/galleries' '{'
     Assert-True (($invalidBody.Data.errors.body -join ' ') -match 'JSON') 'JSON format hint missing'
     $offsetDate = [DateTimeOffset]::UtcNow.AddDays(1).ToOffset([TimeSpan]::FromHours(3))

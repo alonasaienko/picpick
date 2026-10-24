@@ -57,9 +57,13 @@ foreach (var environment in new[] { "Development", "Production" })
     foreach (var item in new[] { ("missing", 404, "GALLERY_NOT_FOUND"), ("conflict", 409, "GALLERY_NOT_FINALIZABLE"),
         ("invalid", 422, "GALLERY_EXPIRES_AT_INVALID"), ("unexpected", 500, "INTERNAL_ERROR") })
     {
+        var errorCount = logs.Messages.Count(message => message.Contains("|Error|"));
         using var response = await client.GetAsync($"/checks/error/{item.Item1}?token=private-marker");
         var problem = await Problem(response, item.Item2, item.Item3);
         Check(problem.TryGetProperty("errors", out _) == (item.Item2 == 422), "Unexpected errors member");
+        Check(logs.Messages.Count(message => message.Contains("|Error|")) == errorCount + (item.Item2 == 500 ? 1 : 0),
+            "Expected exceptions logged as failures or unexpected exception logged twice");
+        if (item.Item2 == 404) Check(problem.GetProperty("title").GetString() == "Ресурс не знайдено", "404 title is zone-specific");
         if (item.Item2 == 500)
         {
             var traceId = problem.GetProperty("traceId").GetString()!;
@@ -96,8 +100,8 @@ foreach (var environment in new[] { "Development", "Production" })
     using (var response = await client.PostAsJsonAsync("/checks/default-validation", new { code = "1234" }))
     {
         var problem = await Problem(response, 400, "VALIDATION_FAILED");
-        Check(problem.GetProperty("errors").GetProperty("label")[0].GetString() == "Укажіть значення поля.", "Default Required message missing");
-        Check(problem.GetProperty("errors").GetProperty("code")[0].GetString() == "Максимальна довжина — 3 символів.", "Default MaxLength message missing");
+        Check(problem.GetProperty("errors").GetProperty("label")[0].GetString() == "The Label field is required.", "Default ModelState Required message changed");
+        Check(problem.GetProperty("errors").GetProperty("code")[0].GetString() == "The field Code must be a string or array type with a maximum length of '3'.", "Default ModelState MaxLength message changed");
     }
     using (var request = new HttpRequestMessage(HttpMethod.Get, "/checks/error/unexpected"))
     {
@@ -117,6 +121,7 @@ foreach (var environment in new[] { "Development", "Production" })
     {
         Check(response.Content.Headers.ContentType?.MediaType == "text/html", "Page error handler replaced by API handler");
         Check((await response.Content.ReadAsStringAsync()).Contains("Помилка сторінки"), "Page fallback missing");
+        Check(logs.Messages.Count(message => message.Contains("page-only")) == 1, "Page exception missing or logged twice");
     }
     await app.StopAsync();
 }
@@ -170,14 +175,14 @@ public sealed class DefaultProbeRequest
 internal sealed class TestLogs : ILoggerProvider
 {
     internal ConcurrentQueue<string> Messages { get; } = new();
-    public ILogger CreateLogger(string categoryName) => new TestLogger(Messages);
+    public ILogger CreateLogger(string categoryName) => new TestLogger(Messages, categoryName);
     public void Dispose() { }
 
-    private sealed class TestLogger(ConcurrentQueue<string> messages) : ILogger
+    private sealed class TestLogger(ConcurrentQueue<string> messages, string category) : ILogger
     {
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
         public bool IsEnabled(LogLevel logLevel) => true;
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
-            Func<TState, Exception?, string> formatter) => messages.Enqueue(formatter(state, exception) + exception);
+            Func<TState, Exception?, string> formatter) => messages.Enqueue($"{category}|{logLevel}|" + formatter(state, exception) + exception);
     }
 }
