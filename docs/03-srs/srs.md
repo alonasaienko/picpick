@@ -208,8 +208,10 @@ flowchart LR
 stateDiagram-v2
     [*] --> Draft: FR-103 створення
     Draft --> Processing: FR-201 перше прийняте фото
-    Processing --> Ready: FR-203 немає фото в Uploaded і Processing
+    Processing --> Ready: FR-203, FR-207 немає фото в Uploaded і Processing
     Ready --> Processing: FR-201 нові фото, FR-206 ручний повтор
+    Processing --> Draft: FR-207 видалено останнє фото
+    Ready --> Draft: FR-207 видалено останнє фото
     Ready --> Shared: FR-301 створення посилання
     Ready --> Finalized: FR-106
     Shared --> Finalized: FR-106
@@ -238,7 +240,7 @@ stateDiagram-v2
 
 #### 3.3.1 Performance
 
-[NFR-201](zone-b-processing.md#nfr-201-продуктивність-і-масштабованість-обробки): 300 JPEG обробляються одним Worker не довше 10 хвилин, 300 RAW — не довше 25 хвилин; другий Worker пришвидшує обробку щонайменше в 1,6 раза; 95% запитів до Web App під час обробки — до 500 мс. Час завантаження прев'ю на мобільній мережі задає NFR-302.
+[NFR-201](zone-b-processing.md#nfr-201-продуктивність-і-масштабованість-обробки): 300 JPEG обробляються одним Worker не довше 10 хвилин, 300 RAW — не довше 25 хвилин; другий Worker пришвидшує обробку щонайменше в 1,6 раза; 95% запитів до сторінок і REST API Web App під час обробки, крім самого завантаження файлів, виконуються за ≤ 500 мс. Час завантаження прев'ю на мобільній мережі задає NFR-302.
 
 #### 3.3.2 Security
 
