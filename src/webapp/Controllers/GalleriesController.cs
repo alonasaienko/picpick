@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using WebApp.Controllers.ZoneA;
 using WebApp.Models.ZoneA;
 using WebApp.Infrastructure;
@@ -10,6 +11,7 @@ namespace WebApp.Controllers;
 [ApiController]
 [Route("api/galleries")]
 [ZoneADemo]
+[EnableRateLimiting(RateLimitPolicies.Default)]
 [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
 [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
 [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status403Forbidden, "application/problem+json")]
@@ -19,7 +21,7 @@ public sealed class GalleriesController : ControllerBase
 {
     /// <summary>Створити власну галерею у статусі Draft без фото.</summary>
     /// <param name="request">Назва й майбутній термін дії не далі ніж через 30 діб. Власника визначає сервер.</param>
-    /// <param name="demoError">Лише Development: 401, 403, 415, 429, 500. Для звичайного запиту залишити порожнім.</param>
+    /// <param name="demoError">Лише Development: 401, 403, 415, 500. Для звичайного запиту залишити порожнім.</param>
     /// <returns>Метадані нової Gallery і заголовок Location з адресою деталей.</returns>
     /// <response code="201">Створено Draft, photoCount = 0. Location містить адресу деталей.</response>
     /// <response code="400">VALIDATION_FAILED: некоректний JSON або тип; відсутні поля, порожня назва чи понад 100 символів. errors пояснює помилки полів.</response>
@@ -27,7 +29,7 @@ public sealed class GalleriesController : ControllerBase
     /// <response code="403">GALLERY_ACTION_FORBIDDEN: користувач не має дозволу на дію. Заглушка: demoError=403.</response>
     /// <response code="415">UNSUPPORTED_MEDIA_TYPE: тіло запиту не JSON. Демонстрація у Swagger: demoError=415.</response>
     /// <response code="422">GALLERY_EXPIRES_AT_INVALID: expiresAt уже настав або перевищує 30 діб. Причина в errors.expiresAt.</response>
-    /// <response code="429">RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Заглушка demoError=429 повертає 30 секунд.</response>
+    /// <response code="429">RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Реальна політика default: 120 запитів за хвилину на IP.</response>
     /// <response code="500">INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.</response>
     [HttpPost]
     [ProducesResponseType(typeof(GalleryResponse), StatusCodes.Status201Created)]
@@ -48,13 +50,13 @@ public sealed class GalleriesController : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = gallery.GalleryId }, gallery);
     }
     /// <summary>Отримати список власних галерей, новіші першими.</summary>
-    /// <param name="demoError">Лише Development: 401, 403, 429, 500. Для звичайного запиту залишити порожнім.</param>
+    /// <param name="demoError">Лише Development: 401, 403, 500. Для звичайного запиту залишити порожнім.</param>
     /// <returns>Масив метаданих власних галерей, зокрема порожній.</returns>
     /// <response code="200">Метадані власних галерей за createdAt від новіших до старіших; при однаковому часі — galleryId за зростанням.</response>
     /// <response code="400">VALIDATION_FAILED: невідомий demoError або демонстраційний параметр поза Development.</response>
     /// <response code="401">UNAUTHENTICATED: фотограф не ввійшов або сесія нечинна. Заглушка: demoError=401.</response>
     /// <response code="403">GALLERY_ACTION_FORBIDDEN: користувач не має дозволу на дію. Заглушка: demoError=403.</response>
-    /// <response code="429">RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Заглушка demoError=429 повертає 30 секунд.</response>
+    /// <response code="429">RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Реальна політика default: 120 запитів за хвилину на IP.</response>
     /// <response code="500">INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.</response>
     [HttpGet]
     [ProducesResponseType(typeof(GalleryResponse[]), StatusCodes.Status200OK)]
@@ -71,14 +73,14 @@ public sealed class GalleriesController : ControllerBase
     }
     /// <summary>Отримати метадані власної галереї.</summary>
     /// <param name="id">UUID Gallery. Демо: 00000000-0000-0000-0000-000000000103 — Ready; 199 замість 103 — чужа, 999 — відсутня.</param>
-    /// <param name="demoError">Лише Development: 401, 403, 429, 500. Для звичайного запиту залишити порожнім.</param>
+    /// <param name="demoError">Лише Development: 401, 403, 500. Для звичайного запиту залишити порожнім.</param>
     /// <returns>Метадані власної Gallery без фото й вибору.</returns>
     /// <response code="200">Метадані власної Gallery; після expiresAt — Expired до очищення, не довше 24 годин.</response>
     /// <response code="400">VALIDATION_FAILED: неправильний UUID або demoError. errors пояснює помилку.</response>
     /// <response code="401">UNAUTHENTICATED: фотограф не ввійшов або сесія нечинна. Заглушка: demoError=401.</response>
     /// <response code="403">GALLERY_ACTION_FORBIDDEN: користувач не має дозволу на дію. Заглушка: demoError=403. Чужа Gallery повертає 404.</response>
     /// <response code="404">GALLERY_NOT_FOUND: галерея відсутня, видалена або чужа; однакове повідомлення без чужих даних.</response>
-    /// <response code="429">RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Заглушка demoError=429 повертає 30 секунд.</response>
+    /// <response code="429">RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Реальна політика default: 120 запитів за хвилину на IP.</response>
     /// <response code="500">INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.</response>
     [HttpGet("{id}")]
     [ProducesResponseType(typeof(GalleryResponse), StatusCodes.Status200OK)]
@@ -94,7 +96,7 @@ public sealed class GalleriesController : ControllerBase
     }
     /// <summary>Фіналізувати чинну Ready або Shared; повтор Finalized також успішний.</summary>
     /// <param name="id">UUID власної Gallery.</param>
-    /// <param name="demoError">Лише Development: 401, 403, 429, 500. Для звичайного запиту залишити порожнім.</param>
+    /// <param name="demoError">Лише Development: 401, 403, 500. Для звичайного запиту залишити порожнім.</param>
     /// <returns>Gallery зі статусом Finalized і повідомлення про результат.</returns>
     /// <response code="200">Finalized у gallery та повідомлення message. Повтор повертає «Галерею вже фіналізовано» без зміни даних.</response>
     /// <response code="400">VALIDATION_FAILED: неправильний UUID або demoError. errors пояснює помилку.</response>
@@ -102,7 +104,7 @@ public sealed class GalleriesController : ControllerBase
     /// <response code="403">GALLERY_ACTION_FORBIDDEN: користувач не має дозволу на дію. Заглушка: demoError=403. Чужа Gallery повертає 404.</response>
     /// <response code="404">GALLERY_NOT_FOUND: галерея відсутня, видалена або чужа; однакове загальне повідомлення.</response>
     /// <response code="409">GALLERY_NOT_FINALIZABLE: Draft, Processing або Expired не дозволяють фіналізацію. Повтор чинної Finalized повертає 200.</response>
-    /// <response code="429">RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Заглушка demoError=429 повертає 30 секунд.</response>
+    /// <response code="429">RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Реальна політика default: 120 запитів за хвилину на IP.</response>
     /// <response code="500">INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.</response>
     [HttpPost("{id}/finalize")]
     [ProducesResponseType(typeof(FinalizeGalleryResponse), StatusCodes.Status200OK)]
@@ -126,14 +128,14 @@ public sealed class GalleriesController : ControllerBase
     }
     /// <summary>Видалити власну галерею в будь-якому статусі.</summary>
     /// <param name="id">UUID власної Gallery.</param>
-    /// <param name="demoError">Лише Development: 401, 403, 429, 500. Для звичайного запиту залишити порожнім.</param>
+    /// <param name="demoError">Лише Development: 401, 403, 500. Для звичайного запиту залишити порожнім.</param>
     /// <returns>204 без тіла після видалення тестових метаданих.</returns>
     /// <response code="204">Тестові метадані видалено; тіла відповіді немає.</response>
     /// <response code="400">VALIDATION_FAILED: неправильний UUID або demoError. errors пояснює помилку.</response>
     /// <response code="401">UNAUTHENTICATED: фотограф не ввійшов або сесія нечинна. Заглушка: demoError=401.</response>
     /// <response code="403">GALLERY_ACTION_FORBIDDEN: користувач не має дозволу на дію. Заглушка: demoError=403. Чужа Gallery повертає 404.</response>
     /// <response code="404">GALLERY_NOT_FOUND: галерея відсутня, уже видалена або чужа; однакове загальне повідомлення.</response>
-    /// <response code="429">RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Заглушка demoError=429 повертає 30 секунд.</response>
+    /// <response code="429">RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Реальна політика default: 120 запитів за хвилину на IP.</response>
     /// <response code="500">INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.</response>
     [HttpDelete("{id}")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
