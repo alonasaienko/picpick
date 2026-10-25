@@ -99,7 +99,7 @@ sequenceDiagram
         WebApp-->>Browser: Відмова GALLERY_FINALIZED, вибір не змінюється
         Browser->>Client: «Галерею закрито фотографом»
     else Selection уже Submitted (наприклад, відправили з іншого пристрою)
-        WebApp-->>Browser: Відмова SELECTION_ALREADY_SUBMITTED, без повторної зміни
+        WebApp-->>Browser: 200 OK: вибір уже відправлено, початковий submittedAt, без повторної зміни (FR-305 п.3)
         Browser->>Client: «Вибір уже відправлено»
     else посилання недійсне
         WebApp->>WebApp: Врахувати недійсний запит для IP
