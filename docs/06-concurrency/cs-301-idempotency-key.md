@@ -59,6 +59,14 @@ sequenceDiagram
     API->>DB: SELECT збережену відповідь за ключем K
     DB-->>API: 200 і початковий submittedAt
     API-->>B1: 200 OK, Idempotent-Replayed: true
+    alt Запит з іншим ключем L (інший пристрій або вкладка без спільного ключа)
+        B2->>API: відправити вибір (токен, ключ L)
+        API->>DB: INSERT IdempotencyKey(selection_id, L),<br/>UPDATE Selection ... WHERE ... AND Status = Open
+        DB-->>API: оновлено 0 рядків, Selection уже Submitted
+        API->>DB: SELECT початковий submittedAt
+        DB-->>API: початковий submittedAt
+        API-->>B2: 200 OK, початковий submittedAt,<br/>без повторного сповіщення (FR-305 п.3)
+    end
 ```
 
 ## Як застосовано в нашій системі
@@ -87,7 +95,7 @@ sequenceDiagram
 
 | Пункт | Що саме |
 |---|---|
-| п.3 Вимоги | [FR-304](../03-srs/zone-c-client.md#fr-304-лайк-і-зняття-лайка) — вибір створює перший лайк; [FR-305](../03-srs/zone-c-client.md#fr-305-відправка-вибору) — відправка вибору; [NFR-301](../03-srs/identity.md#nfr-301-захист-посилання) — доступ лише за токеном |
+| п.3 Вимоги | [FR-304](../03-srs/zone-c-client.md#fr-304-лайк-і-зняття-лайка) — вибір створює перший лайк; [FR-305](../03-srs/zone-c-client.md#fr-305-відправка-вибору) — відправка вибору; [NFR-301](../03-srs/zone-c-client.md#nfr-301-безпека-доступу-за-посиланням) — доступ лише за токеном |
 | п.4 Архітектура | [flow-zone-c.md](../04-architecture/flow-zone-c.md); [ADR-002](../04-architecture/adr/002-microservices.md) — Web App єдиний власник бази |
 | п.5 API | Маршрут за токеном фіксує API зони C. Запит містить токен і `Idempotency-Key`; успішна перша й повторна відправка повертають `200` із `submittedAt`. Можливі відповіді: `SELECTION_EMPTY`, `GALLERY_FINALIZED`, `SHARE_LINK_INVALID`. |
 
