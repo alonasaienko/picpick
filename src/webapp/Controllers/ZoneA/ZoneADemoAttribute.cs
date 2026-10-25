@@ -23,16 +23,10 @@ public sealed class ZoneADemoAttribute : ActionFilterAttribute
             "403" => http.ApiError(403, "GALLERY_ACTION_FORBIDDEN", "Ця дія недоступна поточному користувачу."),
             "415" when context.ActionDescriptor.RouteValues["action"] == "Create" =>
                 http.ApiError(415, "UNSUPPORTED_MEDIA_TYPE", "Передайте тіло запиту як application/json."),
-            "429" => RateLimited(http),
             "500" => throw new InvalidOperationException("Демонстраційний виняток зони A."),
             _ => http.ApiError(400, "VALIDATION_FAILED", "Невідомий демонстраційний сценарій.",
-                new() { ["demoError"] = new[] { "Допустимі значення: 401, 403, 429, 500; для створення також 415." } })
+                new() { ["demoError"] = new[] { "Допустимі значення: 401, 403, 500; для створення також 415." } })
         };
     }
 
-    private static Microsoft.AspNetCore.Mvc.ObjectResult RateLimited(HttpContext http)
-    {
-        http.Response.Headers.RetryAfter = "30";
-        return http.ApiError(429, "RATE_LIMIT_EXCEEDED", "Перевищено ліміт запитів. Повторіть через 30 секунд.");
-    }
 }
