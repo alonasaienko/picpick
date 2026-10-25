@@ -104,10 +104,9 @@ try {
         Assert-True ($first.Status -eq 200 -and $again.Status -eq 200) 'Finalize must be idempotent'
         Assert-True ($again.Data.gallery.status -eq 'Finalized' -and $again.Data.message -eq 'Галерею вже фіналізовано') 'Incorrect repeated finalize response'
     }
-    foreach ($case in @(@(401, 'UNAUTHENTICATED'), @(403, 'GALLERY_ACTION_FORBIDDEN'), @(429, 'RATE_LIMIT_EXCEEDED'), @(500, 'INTERNAL_ERROR'))) {
+    foreach ($case in @(@(401, 'UNAUTHENTICATED'), @(403, 'GALLERY_ACTION_FORBIDDEN'), @(500, 'INTERNAL_ERROR'))) {
         $response = Send-Api GET "/api/galleries?demoError=$($case[0])"
         Assert-Problem $response $case[0] $case[1]
-        if ($case[0] -eq 429) { Assert-True ([string]$response.Headers['Retry-After'] -eq '30') 'Retry-After missing' }
     }
     Assert-Problem (Send-Api GET '/api/galleries?demoError=unknown') 400 'VALIDATION_FAILED'
 
@@ -143,4 +142,14 @@ finally {
 Assert-Problem (Send-Api GET "/api/galleries/$id") 404 'GALLERY_NOT_FOUND'
 Assert-Problem (Send-Api DELETE "/api/galleries/$id") 404 'GALLERY_NOT_FOUND'
 Assert-True ($id -notin (Send-Api GET '/api/galleries').Data.galleryId) 'Deleted Gallery remains in list'
+# Run last: exhausting the shared IP quota must not interfere with cleanup above.
+$limited = $null
+for ($attempt = 0; $attempt -lt 121; $attempt++) {
+    $response = Send-Api GET '/api/galleries'
+    if ($response.Status -eq 429) { $limited = $response; break }
+    Assert-True ($response.Status -eq 200) 'Unexpected status before rate limit'
+}
+Assert-True ($null -ne $limited) 'Real rate limiter did not reject requests'
+Assert-Problem $limited 429 'RATE_LIMIT_EXCEEDED'
+Assert-True ([int]([string]$limited.Headers['Retry-After']) -gt 0) 'Retry-After must be positive seconds'
 Write-Output "Zone A smoke checks passed: $checks"
