@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using WebApp.Controllers.ZoneA;
 using WebApp.Controllers.ZoneB;
 using WebApp.Infrastructure;
@@ -10,6 +11,7 @@ namespace WebApp.Controllers;
 /// <remarks>Заглушки: файли перевіряються, але нікуди не зберігаються; обробки немає. Галереї — тестові дані зони A.</remarks>
 [ApiController]
 [Route("api/galleries/{galleryId}")]
+[EnableRateLimiting(RateLimitPolicies.Default)]
 [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status400BadRequest, "application/problem+json")]
 [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status401Unauthorized, "application/problem+json")]
 [ProducesResponseType(typeof(ApiProblemDetails), StatusCodes.Status404NotFound, "application/problem+json")]
@@ -33,6 +35,7 @@ public sealed class PhotosController : ControllerBase
     /// <response code="429">RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.</response>
     /// <response code="500">INTERNAL_ERROR: загальне повідомлення й traceId.</response>
     [HttpPost("photos")]
+    [EnableRateLimiting(RateLimitPolicies.Upload)]
     [RequestSizeLimit(MaxRequestBytes + 10 * 1024 * 1024)]
     [RequestFormLimits(MultipartBodyLengthLimit = MaxRequestBytes + 10 * 1024 * 1024)]
     [ProducesResponseType(typeof(UploadPhotosResponse), StatusCodes.Status200OK)]

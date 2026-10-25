@@ -8,6 +8,7 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options => options.IncludeXmlComments(
     Path.Combine(AppContext.BaseDirectory, "WebApp.xml"), includeControllerXmlComments: true));
 builder.Services.AddApiErrorHandling();
+builder.Services.AddApiRateLimiting();
 
 var app = builder.Build();
 
@@ -26,6 +27,7 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseApiErrorHandling();
+app.UseRateLimiter();
 app.UseAuthorization();
 
 app.MapRazorPages();
