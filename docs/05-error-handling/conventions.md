@@ -36,7 +36,7 @@
 | **401** Unauthorized | Користувача не автентифіковано: немає cookie входу, він прострочений або вхід не вдався | Запит до `/api/galleries` без входу; неправильний пароль у REST API (FR-102) | `UNAUTHENTICATED` |
 | **403** Forbidden | Користувач відомий і має доступ до ресурсу, але **ця дія** йому заборонена | Клієнт за чинним `ShareLink` намагається отримати архів оригіналів (FR-208), який доступний лише фотографу | `…_FORBIDDEN`, напр. `PHOTO_ORIGINALS_FORBIDDEN` |
 | **404** Not Found | Ресурс не існує **або належить іншому фотографу** | `GET /api/galleries/42`, коли галереї 42 немає або вона чужа | `GALLERY_NOT_FOUND` |
-| **409** Conflict | Запит коректний, але **поточний стан** ресурсу не дозволяє дію | Завантаження фото в галерею `Finalized`; повторна відправка вибору; повтор обробки фото зі статусом `Ready` | `GALLERY_FINALIZED`, `SELECTION_ALREADY_SUBMITTED`, `PHOTO_NOT_FAILED` |
+| **409** Conflict | Запит коректний, але **поточний стан** ресурсу не дозволяє дію | Завантаження фото в галерею `Finalized`; зміна лайка після відправки вибору; повтор обробки фото зі статусом `Ready` | `GALLERY_FINALIZED`, `SELECTION_ALREADY_SUBMITTED`, `PHOTO_NOT_FAILED` |
 | **422** Unprocessable Content | Запит **прочитано**, але значення порушують правила предметної області | `expiresAt` у минулому або далі ніж через 30 діб (FR-103); файл не JPEG/PNG/HEIC/RAW або більший за ліміт (FR-202) | `GALLERY_EXPIRES_AT_INVALID`, `PHOTO_FORMAT_NOT_SUPPORTED` |
 | **429** Too Many Requests | Перевищено ліміт частоти запитів | Забагато спроб входу або завантажень за короткий час | `RATE_LIMIT_EXCEEDED` |
 | 500 Internal Server Error | Непередбачена помилка сервера | Виняток у коді, недоступна база даних | `INTERNAL_ERROR` |
