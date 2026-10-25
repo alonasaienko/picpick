@@ -13,3 +13,4 @@
 | CS-201 | Конкуруючі споживачі (Competing Consumers) | Альона | взято |
 | CS-202 | Транзакційний outbox (Transactional Outbox) | Альона | взято |
 | CS-301 | Ключ ідемпотентності (Idempotency Key) | Уляна | взято |
+| CS-302 | LWW-множина (LWW-Element-Set, CRDT) | Уляна | взято |
