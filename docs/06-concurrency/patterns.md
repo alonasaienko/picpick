@@ -10,3 +10,5 @@
 |---|---|---|---|
 | CS-101 | Оптимістичне блокування (Optimistic Concurrency Control) | Юлія | взято |
 | CS-102 | Вибір лідера (Leader Election) | Юлія | взято |
+| CS-201 | Конкуруючі споживачі (Competing Consumers) | Альона | взято |
+| CS-202 | Транзакційний outbox (Transactional Outbox) | Альона | взято |
