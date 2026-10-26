@@ -4,12 +4,12 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
 using WebApp.Infrastructure;
 using WebApp.Models.ZoneC;
+using ProblemDetails = WebApp.Infrastructure.ApiProblemDetails;
 
 namespace WebApp.Controllers;
 
 /// <summary>API зони C: посилання для клієнта, прев'ю, лайки й відправка вибору.</summary>
 [ApiController]
-[Produces("application/json")]
 [EnableRateLimiting(RateLimitPolicies.Default)]
 public class ShareController : ControllerBase
 {

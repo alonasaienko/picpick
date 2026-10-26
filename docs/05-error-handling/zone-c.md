@@ -4,7 +4,7 @@
 
 ## Обсяг заглушок
 
-Цей файл фіксує контракт заглушки `ShareController` для перевірки через Swagger UI. Заглушка повертає фіксовані тестові дані й не зберігає зміни між запитами; фактичний контролер і постійне сховище є наступним кроком реалізації. Ситуацію визначає значення токена або `id` у запиті (див. «Перевірка через Swagger UI»). Автентифікація фотографа в заглушці не реалізована: 401 описано в контракті та Swagger. Ліміт частоти використовує спільну політику `default`, а для недійсних токенів діє окремий ліміт NFR-301.
+Цей файл фіксує контракт заглушки `ShareController` для перевірки через Swagger UI. Заглушка повертає фіксовані тестові дані й не зберігає зміни між запитами. Ситуацію визначає значення токена або `id` у запиті (див. «Перевірка через Swagger UI»). Автентифікація фотографа в заглушці не реалізована: 401 описано в контракті та Swagger. Ліміт частоти використовує спільну політику `default`.
 
 ## Ендпоінти
 
@@ -17,7 +17,7 @@
 | C-303 | Клієнт | `GET /api/share-links/{token}/previews` | `Token` у шляху | **200**, `galleryName`, `nickname`, `galleryStatus`, `selectionStatus`, `expiresAt`, `likedCount`, `previews[]` (`photoId`, `previewUrl`, `liked`) | Спільні; **404** `SHARE_LINK_INVALID` для будь-якого недійсного токена |
 | C-304a | Клієнт | `PUT /api/share-links/{token}/likes/{photoId}` | `Token` і UUID фото в шляху; тіла немає | **200**, `photoId`, `liked` (`true`), `likedCount` | Спільні; **404** `SHARE_LINK_INVALID`, `PHOTO_NOT_FOUND`; **409** `SELECTION_ALREADY_SUBMITTED`, `GALLERY_FINALIZED` |
 | C-304b | Клієнт | `DELETE /api/share-links/{token}/likes/{photoId}` | `Token` і UUID фото в шляху; тіла немає | **200**, `photoId`, `liked` (`false`), `likedCount`; зняття відсутнього лайка також успішне | Спільні; **404** `SHARE_LINK_INVALID`, `PHOTO_NOT_FOUND`; **409** `SELECTION_ALREADY_SUBMITTED`, `GALLERY_FINALIZED` |
-| C-304c | Клієнт | `GET /api/share-links/{token}/likes?since={opSeq}` | `Token` у шляху; опційний курсор `since` | **200**, зміни лайків після `opSeq`, поточний `opSeq` | Спільні; **404** `SHARE_LINK_INVALID`; **409** `SELECTION_ALREADY_SUBMITTED`, `GALLERY_FINALIZED` |
+| C-304c | Клієнт | `GET /api/share-links/{token}/likes?since={opSeq}` | `Token` у шляху; опційний курсор `since` | **200**, зміни лайків після `opSeq`, поточний `opSeq` | Спільні; **404** `SHARE_LINK_INVALID` |
 | C-305 | Клієнт | `POST /api/share-links/{token}/selection/submit` | `Token` у шляху; тіла немає | **200**, `status` (`Submitted`), початковий `submittedAt`, `likedCount`, `likedPhotoIds[]`; повторна відправка повертає той самий результат | Спільні; **404** `SHARE_LINK_INVALID`; **409** `SELECTION_EMPTY`, `GALLERY_FINALIZED` |
 | C-306 | Фотограф | `GET /api/galleries/{galleryId}/selection` | UUID галереї в шляху | **200**, `galleryId`, `status` (`Open` чи `Submitted`), `submittedAt`, `count`, `items[]` (`photoId`, `fileName`, `previewUrl`) | Спільні; **404** `SELECTION_NOT_FOUND`, `GALLERY_NOT_FOUND`; **409** `GALLERY_EXPIRED` |
 
@@ -30,7 +30,7 @@
 | 400 | `VALIDATION_FAILED` | Неправильний UUID (`galleryId`, `shareLinkId`, `photoId`), некоректний `since`, зламаний JSON або відсутнє тіло, якщо воно передбачене контрактом | C-301, C-302, C-304, C-306 |
 | 401 | `UNAUTHENTICATED` | Фотограф не ввійшов | C-301, C-302, C-306 |
 | 404 | `GALLERY_NOT_FOUND` | Галерея відсутня або чужа — однакова відповідь (NFR-102) | C-301, C-302, C-306 |
-| 429 | `RATE_LIMIT_EXCEEDED` | Перевищено ліміт запитів; `Retry-After` — секунди | усі |
+| 429 | `RATE_LIMIT_EXCEEDED` | Перевищено ліміт спільної політики `default` (120 запитів за хвилину); `Retry-After` — секунди | усі |
 | 500 | `INTERNAL_ERROR` | Непередбачена помилка сервера; загальний текст і `traceId` | усі |
 
 ### Власні помилки зони C
@@ -57,8 +57,8 @@
 - **Лайки та синхронізація.** Кожен запит змінює один елемент. `PUT` і `DELETE` не передають список лайків, тому паралельні зміни різних фото не перезаписують одна одну. `GET .../likes?since=` повертає журнал змін після курсора.
 - **Спільні стани.** Лайк після відправки вибору та лайк у фіналізованій галереї — 409. Повторна відправка вже `Submitted` — успіх із початковим `submittedAt`, без повторної зміни стану.
 - **Фото, яких клієнт не бачить.** Фото не в `Ready` не потрапляє до прев'ю, а операція над ним повертає `PHOTO_NOT_FOUND`. Оригінали й прямі адреси MinIO клієнту не повертаються.
-- **Ліміти.** Для звичайних запитів діє політика `default` — 120 запитів за хвилину. Для запитів із недійсним токеном діє окремий захисний ліміт NFR-301 — до 30 запитів за хвилину з однієї IP-адреси. Після перевищення повертається 429 і `Retry-After`.
-- **Безпека і приватність.** Токен не потрапляє в `instance` або `detail`; у `instance` використовується `{token}`. Нікнейм повертається як текст без виконання HTML, email фотографа не повертається ніколи.
+- **Ліміти.** Для запитів зони C діє політика `default` — 120 запитів за хвилину з однієї IP-адреси. Після перевищення повертається 429 і `Retry-After`. Окремий ліміт NFR-301 для недійсних токенів ще не реалізований у заглушці.
+- **Безпека і приватність.** Токен не потрапляє в `instance` або `detail`; заглушка використовує безпечний `urn:request:{traceId}` в `instance`. Нікнейм повертається як текст без виконання HTML, email фотографа не повертається ніколи.
 
 ## Що бачить клієнт без акаунта
 
@@ -74,7 +74,7 @@
 
 ## Перевірка через Swagger UI
 
-Цей розділ є сценарієм для заглушки після реалізації `ShareController`. Запустити `dotnet run --project src/webapp/WebApp.csproj --launch-profile http` і відкрити `http://localhost:5056/swagger`. Розділ — `Share`.
+Цей розділ є сценарієм для заглушки `ShareController`. Запустити `dotnet run --project src/webapp/WebApp.csproj --launch-profile http` і відкрити `http://localhost:5056/swagger`. Розділ — `Share`.
 
 **Ендпоінти фотографа.** UUID мають вигляд `00000000-0000-0000-0000-000000000NNN`. Галереї: **101** `Draft`, **102** `Processing`, **103** `Ready`, **104** `Shared`, **105** `Finalized`, **106** `Expired`, **999** відсутня. Посилання: **401** `Active`, **402** `Revoked`, **403** `Expired`.
 
@@ -85,7 +85,8 @@
 | Створення | C-301 для `103` без тіла | 201, галерея переходить у `Shared` |
 | Створення з датою | C-301 з `expiresAt` у минулому або після терміну галереї | 422 `SHARE_LINK_EXPIRES_AT_INVALID` |
 | Створення нового | C-301 для `104` з активним `401` | 201, `401` стає `Revoked`, `Selection` зберігається |
-| Неприпустимий стан | C-301 для `101`, `102`, `105`, `106` | 409 `GALLERY_NOT_SHAREABLE` або `GALLERY_EXPIRED` для `106` |
+| Неприпустимий стан | C-301 для `101`, `102`, `105` | 409 `GALLERY_NOT_SHAREABLE` |
+| Прострочена галерея | C-301 для `106` | 409 `GALLERY_EXPIRED` |
 | 404 галерея | C-301 для `999` | 404 `GALLERY_NOT_FOUND` |
 | 400 | C-301 з `galleryId = abc` | 400 `VALIDATION_FAILED` |
 | Відкликання | C-302 для активного `401`, потім для `402` | 200 `Revoked` в обох випадках |
@@ -97,11 +98,11 @@
 | Відправка | C-305 з `demo-open` і `demo-empty` | 200 для непорожнього; 409 `SELECTION_EMPTY` для порожнього |
 | Повторна відправка | C-305 з `demo-submitted` | 200 з початковим `submittedAt` |
 | Вибір фотографа | C-306 для `104`, `103`, `106`, `999` | 200; 404 `SELECTION_NOT_FOUND`; 409 `GALLERY_EXPIRED`; 404 `GALLERY_NOT_FOUND` |
-| 429 | 31 запит із недійсним токеном за хвилину | 429 `RATE_LIMIT_EXCEEDED` з `Retry-After` |
+| 429 | 121 запит за хвилину з однієї IP-адреси до будь-якого endpoint-а зони C | 429 `RATE_LIMIT_EXCEEDED` з `Retry-After` |
 
 ## Приклади Problem Details
 
-У всіх прикладах `type` — зафіксоване посилання на відповідний розділ RFC 9110, `traceId` — умовний. Реакція клієнта не повинна показувати стек викликів, внутрішні шляхи або секретний токен.
+У всіх прикладах `type` — зафіксоване посилання на відповідний розділ RFC 9110. Значення `<traceId>` — плейсхолдер: у реальній відповіді Swagger його замінює ідентифікатор конкретного запиту. Реакція клієнта не повинна показувати стек викликів, внутрішні шляхи або секретний токен.
 
 ### C-301. Невалідний `expiresAt`
 
@@ -114,13 +115,36 @@ Content-Type: application/json
 
 ```json
 {
-  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
-  "title": "Значення не відповідає правилам",
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.21",
+  "title": "Дані не відповідають правилам",
   "status": 422,
   "detail": "Термін дії посилання має бути пізніше поточного часу й не пізніше терміну дії галереї.",
-  "instance": "urn:request:00-1a2b3c4d5e6f40718293a4b5c6d7e8f9-0a1b2c3d4e5f6071-01",
+  "instance": "urn:request:<traceId>",
   "errorCode": "SHARE_LINK_EXPIRES_AT_INVALID",
-  "traceId": "00-1a2b3c4d5e6f40718293a4b5c6d7e8f9-0a1b2c3d4e5f6071-01"
+  "traceId": "<traceId>",
+  "errors": {
+    "expiresAt": [
+      "Укажіть майбутню дату не пізніше терміну дії галереї."
+    ]
+  }
+}
+```
+
+### C-302. Відкликати посилання
+
+```http
+POST /api/galleries/00000000-0000-0000-0000-000000000104/share-links/00000000-0000-0000-0000-000000000403/revoke
+```
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+  "title": "Конфлікт стану ресурсу",
+  "status": 409,
+  "detail": "Прострочене посилання не можна відкликати.",
+  "instance": "urn:request:<traceId>",
+  "errorCode": "SHARE_LINK_NOT_ACTIVE",
+  "traceId": "<traceId>"
 }
 ```
 
@@ -136,9 +160,9 @@ GET /api/share-links/abc/previews
   "title": "Ресурс не знайдено",
   "status": 404,
   "detail": "Це посилання більше не діє. Зверніться до вашого фотографа по нове.",
-  "instance": "/api/share-links/{token}/previews",
+  "instance": "urn:request:<traceId>",
   "errorCode": "SHARE_LINK_INVALID",
-  "traceId": "00-6f708192a36473c49394a5b6c7d8e9fa-5f60718293041526-01"
+  "traceId": "<traceId>"
 }
 ```
 
@@ -150,13 +174,50 @@ GET /api/share-links/abc/previews
 PUT /api/share-links/demo-open/likes/00000000-0000-0000-0000-000000000301
 ```
 
+```json
+{
+  "photoId": "00000000-0000-0000-0000-000000000301",
+  "liked": true,
+  "likedCount": 2
+}
+```
+
 ### C-304b. Зняти лайк
 
 ```http
 DELETE /api/share-links/demo-open/likes/00000000-0000-0000-0000-000000000301
 ```
 
+```json
+{
+  "photoId": "00000000-0000-0000-0000-000000000301",
+  "liked": false,
+  "likedCount": 1
+}
+```
+
 Обидві операції виконуються безпечним повторенням. Після помилки клієнт повертає кнопку в попередній стан і показує «Не вдалося зберегти, спробуйте ще раз».
+
+### C-304c. Синхронізувати лайки
+
+```http
+GET /api/share-links/demo-open/likes?since=1
+```
+
+Успішна відповідь містить `opSeq` і масив змін:
+
+```json
+{
+  "opSeq": 2,
+  "changes": [
+    {
+      "photoId": "00000000-0000-0000-0000-000000000302",
+      "liked": true,
+      "opSeq": 2
+    }
+  ]
+}
+```
 
 ### C-305. Відправити вибір повторно
 
@@ -165,6 +226,18 @@ POST /api/share-links/demo-submitted/selection/submit
 ```
 
 Результат — **200**, початковий `submittedAt`, `status: "Submitted"` і той самий список `likedPhotoIds`. Повторне email-сповіщення не надсилається.
+
+```json
+{
+  "status": "Submitted",
+  "submittedAt": "2026-10-25T12:00:00+00:00",
+  "likedCount": 2,
+  "likedPhotoIds": [
+    "00000000-0000-0000-0000-000000000301",
+    "00000000-0000-0000-0000-000000000302"
+  ]
+}
+```
 
 ### C-306. Вибір відсутній
 
@@ -178,10 +251,126 @@ GET /api/galleries/00000000-0000-0000-0000-000000000103/selection
   "title": "Ресурс не знайдено",
   "status": 404,
   "detail": "Для цієї галереї ще немає вибору: посилання для клієнта не створено.",
-  "instance": "/api/galleries/00000000-0000-0000-0000-000000000103/selection",
+  "instance": "urn:request:<traceId>",
   "errorCode": "SELECTION_NOT_FOUND",
-  "traceId": "00-d6e7f8a9bad1c1399394a5b6c7d8e9fa-2637485960718293-01"
+  "traceId": "<traceId>"
 }
 ```
 
 Реакція в кабінеті фотографа: показати «Клієнт ще не отримав посилання» із кнопкою «Створити посилання».
+
+### Інші помилки зони C
+
+Кожен endpoint повертає один об'єкт `ApiProblemDetails`, а не масив. Нижче наведено повні приклади відповідей у форматі Swagger; `traceId` та `instance` показані як плейсхолдери, бо генеруються для кожного запиту.
+
+#### `PHOTO_NOT_FOUND`
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+  "title": "Ресурс не знайдено",
+  "status": 404,
+  "detail": "Фото не знайдено.",
+  "instance": "urn:request:<traceId>",
+  "errorCode": "PHOTO_NOT_FOUND",
+  "traceId": "<traceId>"
+}
+```
+
+#### `GALLERY_NOT_SHAREABLE`
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+  "title": "Конфлікт стану ресурсу",
+  "status": 409,
+  "detail": "Посилання можна створити лише для галереї зі станом Ready або Shared.",
+  "instance": "urn:request:<traceId>",
+  "errorCode": "GALLERY_NOT_SHAREABLE",
+  "traceId": "<traceId>"
+}
+```
+
+#### `GALLERY_FINALIZED`
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+  "title": "Конфлікт стану ресурсу",
+  "status": 409,
+  "detail": "Фотограф завершив відбір у цій галереї, лайки більше не приймаються.",
+  "instance": "urn:request:<traceId>",
+  "errorCode": "GALLERY_FINALIZED",
+  "traceId": "<traceId>"
+}
+```
+
+#### `GALLERY_EXPIRED`
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+  "title": "Конфлікт стану ресурсу",
+  "status": 409,
+  "detail": "Термін дії галереї минув.",
+  "instance": "urn:request:<traceId>",
+  "errorCode": "GALLERY_EXPIRED",
+  "traceId": "<traceId>"
+}
+```
+
+#### `SHARE_LINK_NOT_ACTIVE`
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+  "title": "Конфлікт стану ресурсу",
+  "status": 409,
+  "detail": "Прострочене посилання не можна відкликати.",
+  "instance": "urn:request:<traceId>",
+  "errorCode": "SHARE_LINK_NOT_ACTIVE",
+  "traceId": "<traceId>"
+}
+```
+
+#### `SHARE_LINK_NOT_FOUND`
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+  "title": "Ресурс не знайдено",
+  "status": 404,
+  "detail": "Посилання не знайдено в цій галереї.",
+  "instance": "urn:request:<traceId>",
+  "errorCode": "SHARE_LINK_NOT_FOUND",
+  "traceId": "<traceId>"
+}
+```
+
+#### `SELECTION_ALREADY_SUBMITTED`
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+  "title": "Конфлікт стану ресурсу",
+  "status": 409,
+  "detail": "Вибір уже відправлено, змінювати його не можна.",
+  "instance": "urn:request:<traceId>",
+  "errorCode": "SELECTION_ALREADY_SUBMITTED",
+  "traceId": "<traceId>"
+}
+```
+
+#### `SELECTION_EMPTY`
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+  "title": "Конфлікт стану ресурсу",
+  "status": 409,
+  "detail": "Спочатку оберіть хоча б один кадр.",
+  "instance": "urn:request:<traceId>",
+  "errorCode": "SELECTION_EMPTY",
+  "traceId": "<traceId>"
+}
+```
