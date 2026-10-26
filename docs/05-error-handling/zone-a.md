@@ -12,11 +12,11 @@
 
 | ID | Метод і шлях | Вхід | Успішна відповідь | Помилки |
 |---|---|---|---|---|
-| A-101 | `POST /api/galleries` | JSON: `name`, `expiresAt` | **201**, Gallery зі статусом `Draft`, `photoCount: 0`; `Location: /api/galleries/{id}` | Спільні нижче; **415** `UNSUPPORTED_MEDIA_TYPE` — тіло не JSON; **422** `GALLERY_EXPIRES_AT_INVALID` — термін уже настав або перевищує 30 діб |
-| A-102 | `GET /api/galleries` | Немає | **200**, масив власних Gallery, зокрема `[]`; новіші першими, за рівного `createdAt` — `galleryId` лексикографічно за зростанням | Спільні нижче |
-| A-103 | `GET /api/galleries/{id}` | UUID у шляху | **200**, метадані власної Gallery | Спільні нижче; **404** `GALLERY_NOT_FOUND` — відсутня, видалена або чужа |
-| A-104 | `POST /api/galleries/{id}/finalize` | UUID; тіла немає | **200**, `{ gallery, message }`; `Finalized`. Повтор: «Галерею вже фіналізовано» | Спільні нижче; **404** `GALLERY_NOT_FOUND`; **409** `GALLERY_NOT_FINALIZABLE` — `Draft`, `Processing` або `Expired` |
-| A-105 | `DELETE /api/galleries/{id}` | UUID; тіла немає | **204**, без тіла; у заглушці видалено тестові метадані | Спільні нижче; **404** `GALLERY_NOT_FOUND` — зокрема після повторного DELETE |
+| A-101 | `POST /api/galleries` | JSON: `name`, `expiresAt` | **201**, Gallery зі статусом `Draft`, `photoCount: 0`; `Location: /api/galleries/{id}` | Спільні нижче; **403** `GALLERY_ACTION_FORBIDDEN`; **415** `UNSUPPORTED_MEDIA_TYPE` — тіло не JSON; **422** `GALLERY_EXPIRES_AT_INVALID` — термін уже настав або перевищує 30 діб |
+| A-102 | `GET /api/galleries` | Немає | **200**, масив власних Gallery, зокрема `[]`; новіші першими, за рівного `createdAt` — `galleryId` лексикографічно за зростанням | Спільні нижче; **403** `GALLERY_ACTION_FORBIDDEN` |
+| A-103 | `GET /api/galleries/{id}` | UUID у шляху | **200**, метадані власної Gallery | Спільні нижче; **403** `GALLERY_ACTION_FORBIDDEN`; **404** `GALLERY_NOT_FOUND` — відсутня, видалена або чужа |
+| A-104 | `POST /api/galleries/{id}/finalize` | UUID; тіла немає | **200**, `{ gallery, message }`; `Finalized`. Повтор: «Галерею вже фіналізовано» | Спільні нижче; **403** `GALLERY_ACTION_FORBIDDEN`; **404** `GALLERY_NOT_FOUND`; **409** `GALLERY_NOT_FINALIZABLE` — `Draft`, `Processing` або `Expired` |
+| A-105 | `DELETE /api/galleries/{id}` | UUID; тіла немає | **204**, без тіла; у заглушці видалено тестові метадані | Спільні нижче; **403** `GALLERY_ACTION_FORBIDDEN`; **404** `GALLERY_NOT_FOUND` — зокрема після повторного DELETE |
 
 Метадані Gallery: `galleryId`, `name`, `status`, `expiresAt`, `createdAt`, `photoCount`. Фото, вибір, email і секретні посилання не повертаються. Результат фіналізації містить ці метадані в `gallery` і поле `message`.
 
@@ -26,7 +26,6 @@
 |---|---|---|
 | 400 | `VALIDATION_FAILED` | Зламаний JSON, неправильний тип або UUID, відсутнє обов'язкове поле; назва після `Trim()` порожня чи довша за 100 символів. Також невідомий `demoError`. Поля перелічено в `errors`; для помилки всього тіла ключ `body` |
 | 401 | `UNAUTHENTICATED` | Фотограф не ввійшов або сесія нечинна |
-| 403 | `GALLERY_ACTION_FORBIDDEN` | Користувач має доступ до ресурсу, але не має дозволу на дію. Чужа Gallery завжди дає 404 |
 | 429 | `RATE_LIMIT_EXCEEDED` | Перевищено ліміт запитів; `Retry-After` — секунди |
 | 500 | `INTERNAL_ERROR` | Помилка сервера; загальне повідомлення й `traceId` за конвенцією |
 
@@ -62,3 +61,314 @@ Swagger показує призначення кожного ендпоінту,
 | Видалення | DELETE власної галереї; GET і повторний DELETE | 204 без тіла, потім 404; галереї немає у списку |
 
 `demoError` працює лише в Development; для звичайних запитів його залишають порожнім. Фактичний 415 також виникає при надсиланні тіла `text/plain`. Автоматизована перевірка запущеного API: `./tests/webapp/zone-a-smoke.ps1` (PowerShell 7).
+
+## Приклади
+
+JSON нижче отримано через Swagger UI запущеного Web App у Development 26.10.2026; `traceId` та `instance` залишено з відповідей. Усі помилки мають `Content-Type: application/problem+json`. Параметри `demoError=403` і `demoError=415` імітують відмову; авторизація ще є заглушкою. Описана реакція — вимоги до майбутнього UI на Razor Pages + JavaScript.
+
+UI обирає реакцію за `errorCode`, а не за текстом `detail`; для полів форми використовує ключі `errors`. Спільний розділ реакції клієнта ще готується в задачі #83; посилання нижче ведуть на неї.
+
+### A-101 `POST /api/galleries`: створити галерею
+
+**Запит**
+
+```http
+POST /api/galleries HTTP/1.1
+Content-Type: application/json
+
+{
+  "name": "Весілля Олени та Андрія",
+  "expiresAt": "2026-11-20T18:00:00Z"
+}
+```
+
+**Успіх:** `201 Created`, `Location: /api/galleries/{id}`; у тілі Gallery зі статусом `Draft` і `photoCount: 0`. Для пізнішого запуску оберіть дату в межах наступних 30 діб.
+
+**Спільні помилки:** див. [реакцію клієнта (таска #83)](https://github.com/alonasaienko/picpick/issues/83): 400, 401, 429, 500.
+
+**Помилки**
+
+#### 400 `VALIDATION_FAILED` — приклад із двома полями
+
+Запит: `POST /api/galleries` із JSON `{}`.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+  "title": "Некоректний запит",
+  "status": 400,
+  "detail": "Перевірте обов'язкові поля, типи та довжину значень.",
+  "instance": "urn:request:00-e6c475b918bd1c89d295c6befb77b45c-a33a84988497e244-00",
+  "errorCode": "VALIDATION_FAILED",
+  "traceId": "00-e6c475b918bd1c89d295c6befb77b45c-a33a84988497e244-00",
+  "errors": {
+    "name": [
+      "Укажіть назву галереї."
+    ],
+    "expiresAt": [
+      "Укажіть термін дії галереї."
+    ]
+  }
+}
+```
+
+**Реакція клієнта:** За `VALIDATION_FAILED` показати обидва повідомлення біля `name` та `expiresAt`, зберегти введені значення й залишити форму відкритою. Автоматично не повторювати; повторне надсилання — кнопкою після виправлення полів.
+
+#### 422 `GALLERY_EXPIRES_AT_INVALID`
+
+Запит: той самий POST, але `"expiresAt": "2025-01-01T00:00:00Z"`. Дата понад 30 діб дає той самий код.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.21",
+  "title": "Дані не відповідають правилам",
+  "status": 422,
+  "detail": "Термін дії має бути в майбутньому й не далі ніж через 30 діб.",
+  "instance": "urn:request:00-9224fb3f5cc38e8c2cac510eeed1e31a-d6ba8236a208b4e3-00",
+  "errorCode": "GALLERY_EXPIRES_AT_INVALID",
+  "traceId": "00-9224fb3f5cc38e8c2cac510eeed1e31a-d6ba8236a208b4e3-00",
+  "errors": {
+    "expiresAt": [
+      "Укажіть допустимий майбутній момент завершення терміну."
+    ]
+  }
+}
+```
+
+**Реакція клієнта:** За `GALLERY_EXPIRES_AT_INVALID` показати повідомлення з `errors.expiresAt` біля терміну дії та підказку «Майбутня дата, не далі ніж через 30 діб». Форму й назву зберегти; автоматично не повторювати, надсилати лише після виправлення дати.
+
+#### 415 `UNSUPPORTED_MEDIA_TYPE`
+
+Запит: той самий POST із коректним JSON та `?demoError=415`; без демонстраційного параметра помилку також спричиняє `Content-Type: text/plain`.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.16",
+  "title": "Непідтримуваний тип вмісту",
+  "status": 415,
+  "detail": "Передайте тіло запиту як application/json.",
+  "instance": "urn:request:00-fa177f9501a417296d6d2e17371af362-be2b328bd05652f0-00",
+  "errorCode": "UNSUPPORTED_MEDIA_TYPE",
+  "traceId": "00-fa177f9501a417296d6d2e17371af362-be2b328bd05652f0-00"
+}
+```
+
+**Реакція клієнта:** За `UNSUPPORTED_MEDIA_TYPE` показати банер «Не вдалося надіслати дані форми», зберегти поля та зняти індикатор очікування. Автоматично не повторювати; повтор дозволений після виправлення типу вмісту на `application/json` у клієнті, а не після зміни назви галереї.
+
+#### 403 `GALLERY_ACTION_FORBIDDEN`
+
+Запит: той самий POST із `?demoError=403`.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+  "title": "Дію заборонено",
+  "status": 403,
+  "detail": "Ця дія недоступна поточному користувачу.",
+  "instance": "urn:request:00-d9b99befa8f6afe1e323e81c169197b6-3d60772c4266e022-00",
+  "errorCode": "GALLERY_ACTION_FORBIDDEN",
+  "traceId": "00-d9b99befa8f6afe1e323e81c169197b6-3d60772c4266e022-00"
+}
+```
+
+**Реакція клієнта:** За `GALLERY_ACTION_FORBIDDEN` показати банер «Створення галереї недоступне», зберегти форму та заблокувати надсилання до зміни дозволів. Запит автоматично не повторювати.
+
+### A-102 `GET /api/galleries`: список галерей
+
+**Запит**
+
+```http
+GET /api/galleries HTTP/1.1
+```
+
+**Успіх:** `200 OK`, масив власних Gallery, зокрема `[]`; новіші першими.
+
+**Спільні помилки:** див. [реакцію клієнта (таска #83)](https://github.com/alonasaienko/picpick/issues/83): 400, 401, 429, 500.
+
+**Помилки**
+
+#### 403 `GALLERY_ACTION_FORBIDDEN`
+
+Запит: `GET /api/galleries?demoError=403`.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+  "title": "Дію заборонено",
+  "status": 403,
+  "detail": "Ця дія недоступна поточному користувачу.",
+  "instance": "urn:request:00-510f11fd18a3538bdb6312dbd5d95033-1ed625ae4bd99189-00",
+  "errorCode": "GALLERY_ACTION_FORBIDDEN",
+  "traceId": "00-510f11fd18a3538bdb6312dbd5d95033-1ed625ae4bd99189-00"
+}
+```
+
+**Реакція клієнта:** За `GALLERY_ACTION_FORBIDDEN` замість списку показати «Перегляд галерей недоступний» і прибрати попередньо показані дані. Автоматично не повторювати; новий запит можливий після зміни дозволів.
+
+### A-103 `GET /api/galleries/{id}`: деталі галереї
+
+**Запит**
+
+```http
+GET /api/galleries/00000000-0000-0000-0000-000000000103 HTTP/1.1
+```
+
+**Успіх:** `200 OK`, метадані власної Gallery. Після `expiresAt` — лише метадані `Expired` до очищення, не довше 24 годин.
+
+**Спільні помилки:** див. [реакцію клієнта (таска #83)](https://github.com/alonasaienko/picpick/issues/83): 400, 401, 429, 500.
+
+**Помилки**
+
+#### 404 `GALLERY_NOT_FOUND`
+
+Запит: `GET /api/galleries/00000000-0000-0000-0000-000000000199` (чужа); UUID із закінченням `999` дає такий самий код і повідомлення для відсутньої.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+  "title": "Ресурс не знайдено",
+  "status": 404,
+  "detail": "Галерею не знайдено або вона вам недоступна.",
+  "instance": "urn:request:00-5985caa09c6ade65b6eb969d9f0d6405-5eefe8e9caeda90b-00",
+  "errorCode": "GALLERY_NOT_FOUND",
+  "traceId": "00-5985caa09c6ade65b6eb969d9f0d6405-5eefe8e9caeda90b-00"
+}
+```
+
+**Реакція клієнта:** За `GALLERY_NOT_FOUND` показати «Галерею не знайдено або вона недоступна» з кнопкою «До моїх галерей». Прибрати застарілі деталі та кнопки дій, зупинити опитування цієї галереї. Автоматично не повторювати й не пояснювати, чи галерея чужа або видалена.
+
+#### 403 `GALLERY_ACTION_FORBIDDEN`
+
+Запит: `GET /api/galleries/00000000-0000-0000-0000-000000000103?demoError=403`.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+  "title": "Дію заборонено",
+  "status": 403,
+  "detail": "Ця дія недоступна поточному користувачу.",
+  "instance": "urn:request:00-9122e7ab77e2d6af6453a85a13eba834-7f4a892a3108ac60-00",
+  "errorCode": "GALLERY_ACTION_FORBIDDEN",
+  "traceId": "00-9122e7ab77e2d6af6453a85a13eba834-7f4a892a3108ac60-00"
+}
+```
+
+**Реакція клієнта:** За `GALLERY_ACTION_FORBIDDEN` показати банер «Перегляд галереї недоступний», приховати попередні деталі й дії та запропонувати повернення до списку. Автоматично не повторювати; чужу галерею визначає 404, а не цей код.
+
+### A-104 `POST /api/galleries/{id}/finalize`: фіналізувати галерею
+
+**Запит**
+
+```http
+POST /api/galleries/00000000-0000-0000-0000-000000000103/finalize HTTP/1.1
+```
+
+**Успіх:** `200 OK`, `{ gallery, message }`; статус `Finalized`. Повтор для чинної `Finalized` також повертає 200 з повідомленням «Галерею вже фіналізовано».
+
+**Спільні помилки:** див. [реакцію клієнта (таска #83)](https://github.com/alonasaienko/picpick/issues/83): 400, 401, 429, 500.
+
+**Помилки**
+
+#### 409 `GALLERY_NOT_FINALIZABLE`
+
+Запит: `POST /api/galleries/00000000-0000-0000-0000-000000000102/finalize` (стан `Processing`); `Draft` та `Expired` також не дозволяють дію.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
+  "title": "Конфлікт стану ресурсу",
+  "status": 409,
+  "detail": "Фіналізація доступна лише для чинної галереї Ready або Shared.",
+  "instance": "urn:request:00-e311303d4df14c2e447382e998e87cbd-2ba4e0ad7e631908-00",
+  "errorCode": "GALLERY_NOT_FINALIZABLE",
+  "traceId": "00-e311303d4df14c2e447382e998e87cbd-2ba4e0ad7e631908-00"
+}
+```
+
+**Реакція клієнта:** За `GALLERY_NOT_FINALIZABLE` показати банер «Поточний стан галереї не дозволяє фіналізацію» та один раз заново отримати її деталі через GET. Оновити статус і доступність кнопок: для `Draft`, `Processing`, `Expired` фіналізація недоступна. POST автоматично не повторювати; користувач може натиснути кнопку лише коли стан знову дозволяє дію. Так UI врахує, що після відкриття сторінки могло початися нове завантаження або минути термін дії; 404 від GET обробити як в A-103.
+
+#### 404 `GALLERY_NOT_FOUND`
+
+Запит: `POST /api/galleries/00000000-0000-0000-0000-000000000999/finalize`.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+  "title": "Ресурс не знайдено",
+  "status": 404,
+  "detail": "Галерею не знайдено або вона вам недоступна.",
+  "instance": "urn:request:00-1af42c64a871f8cb4222a4ffead69f8e-fbab515655f655ac-00",
+  "errorCode": "GALLERY_NOT_FOUND",
+  "traceId": "00-1af42c64a871f8cb4222a4ffead69f8e-fbab515655f655ac-00"
+}
+```
+
+**Реакція клієнта:** За `GALLERY_NOT_FOUND` повідомити «Галерею не знайдено або вона недоступна», прибрати її застарілі дані та дії, запропонувати повернутися до списку. Не повторювати POST автоматично й не називати причиною чужу галерею.
+
+#### 403 `GALLERY_ACTION_FORBIDDEN`
+
+Запит: `POST /api/galleries/00000000-0000-0000-0000-000000000103/finalize?demoError=403`.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+  "title": "Дію заборонено",
+  "status": 403,
+  "detail": "Ця дія недоступна поточному користувачу.",
+  "instance": "urn:request:00-87099f4ac1bee2320268e014c3d5c472-47ae40f80479c9c6-00",
+  "errorCode": "GALLERY_ACTION_FORBIDDEN",
+  "traceId": "00-87099f4ac1bee2320268e014c3d5c472-47ae40f80479c9c6-00"
+}
+```
+
+**Реакція клієнта:** За `GALLERY_ACTION_FORBIDDEN` показати банер «Фіналізація недоступна» та заблокувати цю кнопку до зміни дозволів. Не позначати галерею як `Finalized` і не повторювати POST автоматично.
+
+### A-105 `DELETE /api/galleries/{id}`: видалити галерею
+
+**Запит**
+
+```http
+DELETE /api/galleries/00000000-0000-0000-0000-000000000101 HTTP/1.1
+```
+
+**Успіх:** `204 No Content`, без тіла. Після підтвердження видалення UI прибирає галерею зі списку й повертає фотографа до списку, якщо він був на сторінці деталей.
+
+**Спільні помилки:** див. [реакцію клієнта (таска #83)](https://github.com/alonasaienko/picpick/issues/83): 400, 401, 429, 500.
+
+**Помилки**
+
+#### 404 `GALLERY_NOT_FOUND`
+
+Запит: повторити наведений DELETE після першого 204. Видалення чужої або відсутньої галереї повертає такий самий код і повідомлення.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
+  "title": "Ресурс не знайдено",
+  "status": 404,
+  "detail": "Галерею не знайдено або вона вам недоступна.",
+  "instance": "urn:request:00-17e6b9a97d08f6c186edb8640c60c9b5-e319d0d4a5d16523-00",
+  "errorCode": "GALLERY_NOT_FOUND",
+  "traceId": "00-17e6b9a97d08f6c186edb8640c60c9b5-e319d0d4a5d16523-00"
+}
+```
+
+**Реакція клієнта:** За `GALLERY_NOT_FOUND` не повторювати DELETE автоматично. Прибрати застарілий елемент зі списку, закрити підтвердження й повернутися до списку зі сторінки деталей. Показати нейтральне «Галерея вже відсутня або недоступна» замість повідомлення про збій видалення; не стверджувати, що саме цей запит її видалив.
+
+#### 403 `GALLERY_ACTION_FORBIDDEN`
+
+Запит: `DELETE /api/galleries/00000000-0000-0000-0000-000000000101?demoError=403` до видалення тестової галереї або після перезапуску.
+
+```json
+{
+  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.4",
+  "title": "Дію заборонено",
+  "status": 403,
+  "detail": "Ця дія недоступна поточному користувачу.",
+  "instance": "urn:request:00-3d05a1725969850e669de5b5d3ad6819-ca1c849262a38015-00",
+  "errorCode": "GALLERY_ACTION_FORBIDDEN",
+  "traceId": "00-3d05a1725969850e669de5b5d3ad6819-ca1c849262a38015-00"
+}
+```
+
+**Реакція клієнта:** За `GALLERY_ACTION_FORBIDDEN` показати банер «Видалення недоступне», закрити підтвердження й заблокувати кнопку до зміни дозволів. Залишити галерею в списку, не показувати успішне видалення та не повторювати запит автоматично.
