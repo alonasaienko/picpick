@@ -53,7 +53,7 @@ public class ShareController : ControllerBase
     /// <response code="400">VALIDATION_FAILED: некоректний UUID або JSON.</response>
     /// <response code="401">UNAUTHENTICATED: фотограф не ввійшов.</response>
     /// <response code="404">GALLERY_NOT_FOUND: галерея відсутня або чужа.</response>
-    /// <response code="409">GALLERY_NOT_SHAREABLE або GALLERY_EXPIRED: поточний стан галереї не дозволяє створити посилання.</response>
+    /// <response code="409">GALLERY_NOT_SHAREABLE: галерея в стані Draft, Processing, Finalized або Expired, посилання створити не можна (FR-301 п.4).</response>
     /// <response code="422">SHARE_LINK_EXPIRES_AT_INVALID: термін дії не відповідає правилам галереї.</response>
     /// <response code="429">RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.</response>
     /// <response code="500">INTERNAL_ERROR: загальне повідомлення й traceId.</response>
@@ -69,16 +69,10 @@ public class ShareController : ControllerBase
     public IActionResult CreateShareLink(Guid galleryId, [FromBody] CreateShareLinkRequest? request)
     {
         var status = EnsureGallery(galleryId);
-        if (status is "Draft" or "Processing" or "Finalized")
+        if (status is "Draft" or "Processing" or "Finalized" or "Expired")
         {
             throw new ConflictException("GALLERY_NOT_SHAREABLE",
-                "Посилання можна створити лише для галереї зі станом Ready або Shared.");
-        }
-
-        if (status == "Expired")
-        {
-            throw new ConflictException("GALLERY_EXPIRED",
-                "Термін дії галереї минув, посилання створити не можна.");
+                "Посилання можна створити лише для галереї зі станом Ready або Shared, термін дії якої ще не минув.");
         }
 
         var now = DateTimeOffset.UtcNow;
