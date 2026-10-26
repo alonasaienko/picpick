@@ -12,7 +12,7 @@
 
 | ID | Актор | Метод і шлях | Вхід | Успішна відповідь | Помилки |
 |---|---|---|---|---|---|
-| C-301 | Фотограф | `POST /api/galleries/{galleryId}/share-links` | UUID галереї в шляху; опційне JSON `{ "expiresAt": "<UTC datetime>" }` | **201**, `shareLinkId`, `galleryId`, `token`, `url`, `state` (`Active`), `expiresAt`; галерея `Ready` переходить у `Shared` | Спільні; **409** `GALLERY_NOT_SHAREABLE`, `GALLERY_EXPIRED`; **422** `SHARE_LINK_EXPIRES_AT_INVALID` |
+| C-301 | Фотограф | `POST /api/galleries/{galleryId}/share-links` | UUID галереї в шляху; опційне JSON `{ "expiresAt": "<UTC datetime>" }` | **201**, `shareLinkId`, `galleryId`, `token`, `url`, `state` (`Active`), `expiresAt`; галерея `Ready` переходить у `Shared` | Спільні; **409** `GALLERY_NOT_SHAREABLE`; **422** `SHARE_LINK_EXPIRES_AT_INVALID` |
 | C-302 | Фотограф | `POST /api/galleries/{galleryId}/share-links/{shareLinkId}/revoke` | UUID галереї й посилання в шляху; тіла немає | **200**, `shareLinkId`, `galleryId`, `state` (`Revoked`); повторне відкликання `Revoked` також успішне | Спільні; **404** `SHARE_LINK_NOT_FOUND`; **409** `SHARE_LINK_NOT_ACTIVE` для `Expired` |
 | C-303 | Клієнт | `GET /api/share-links/{token}/previews` | `Token` у шляху | **200**, `galleryName`, `nickname`, `galleryStatus`, `selectionStatus`, `expiresAt`, `likedCount`, `previews[]` (`photoId`, `previewUrl`, `liked`) | Спільні; **404** `SHARE_LINK_INVALID` для будь-якого недійсного токена |
 | C-304a | Клієнт | `PUT /api/share-links/{token}/likes/{photoId}` | `Token` і UUID фото в шляху; тіла немає | **200**, `photoId`, `liked` (`true`), `likedCount` | Спільні; **404** `SHARE_LINK_INVALID`, `PHOTO_NOT_FOUND`; **409** `SELECTION_ALREADY_SUBMITTED`, `GALLERY_FINALIZED` |
@@ -40,9 +40,9 @@
 | 404 | `SHARE_LINK_INVALID` | Невідомий, пошкоджений, прострочений або відкликаний токен, а також токен галереї зі станом `Expired`. Для всіх причин відповідь однакова, без даних галереї |
 | 404 | `SELECTION_NOT_FOUND` | Для галереї ще немає посилання, отже клієнт не міг створити вибір |
 | 404 | `PHOTO_NOT_FOUND` | Фото не належить галереї за посиланням або не має статусу `Ready` |
-| 409 | `GALLERY_NOT_SHAREABLE` | Посилання створюють для галереї `Draft`, `Processing`, `Finalized` або іншого стану, що не допускає поширення |
+| 409 | `GALLERY_NOT_SHAREABLE` | Посилання створюють для галереї `Draft`, `Processing`, `Finalized` або `Expired` (FR-301 п.4) |
 | 409 | `GALLERY_FINALIZED` | Галерею закрито фотографом (FR-106): лайки й відправка вибору заборонені |
-| 409 | `GALLERY_EXPIRED` | Термін дії галереї минув; посилання не створюється, а список вибору недоступний |
+| 409 | `GALLERY_EXPIRED` | Термін дії галереї минув; список вибору недоступний (C-306) |
 | 409 | `SHARE_LINK_NOT_ACTIVE` | Відкликають посилання у стані `Expired`; `Revoked` відкликається ідемпотентно успішно |
 | 409 | `SELECTION_ALREADY_SUBMITTED` | Вибір уже відправлено; застосовується до зміни лайків, але не до повторної відправки C-305 |
 | 409 | `SELECTION_EMPTY` | Відправка вибору без жодного лайка |
@@ -85,8 +85,7 @@
 | Створення | C-301 для `103` без тіла | 201, галерея переходить у `Shared` |
 | Створення з датою | C-301 з `expiresAt` у минулому або після терміну галереї | 422 `SHARE_LINK_EXPIRES_AT_INVALID` |
 | Створення нового | C-301 для `104` з активним `401` | 201, `401` стає `Revoked`, `Selection` зберігається |
-| Неприпустимий стан | C-301 для `101`, `102`, `105` | 409 `GALLERY_NOT_SHAREABLE` |
-| Прострочена галерея | C-301 для `106` | 409 `GALLERY_EXPIRED` |
+| Неприпустимий стан | C-301 для `101`, `102`, `105`, `106` | 409 `GALLERY_NOT_SHAREABLE` |
 | 404 галерея | C-301 для `999` | 404 `GALLERY_NOT_FOUND` |
 | 400 | C-301 з `galleryId = abc` | 400 `VALIDATION_FAILED` |
 | Відкликання | C-302 для активного `401`, потім для `402` | 200 `Revoked` в обох випадках |
@@ -284,7 +283,7 @@ GET /api/galleries/00000000-0000-0000-0000-000000000103/selection
   "type": "https://tools.ietf.org/html/rfc9110#section-15.5.10",
   "title": "Конфлікт стану ресурсу",
   "status": 409,
-  "detail": "Посилання можна створити лише для галереї зі станом Ready або Shared.",
+  "detail": "Посилання можна створити лише для галереї зі станом Ready або Shared, термін дії якої ще не минув.",
   "instance": "urn:request:<traceId>",
   "errorCode": "GALLERY_NOT_SHAREABLE",
   "traceId": "<traceId>"
