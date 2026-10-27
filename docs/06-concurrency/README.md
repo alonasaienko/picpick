@@ -47,8 +47,8 @@ flowchart TB
     cs301{{"CS-301 Idempotency Key<br/>ключ запиту від браузера"}} -.- webapp
     cs102{{"CS-102 Leader Election<br/>один виконавець очищення серед копій"}} -.- webapp
     cs101{{"CS-101 Optimistic Concurrency Control<br/>версія рядка галереї"}} -.- postgres
-    cs302{{"CS-302 LWW-Element-Set<br/>час останньої зміни лайка"}} -.- postgres
-    cs202{{"CS-202 Transactional Outbox<br/>задача через таблицю outbox"}} -.- tasks
+    cs302{{"CS-302 LWW-Element-Set<br/>порядковий номер зміни лайка — op_seq"}} -.- postgres
+    cs202{{"CS-202 Transactional Outbox<br/>Photo і outbox_messages в одній транзакції"}} -.- postgres
     cs201{{"CS-201 Competing Consumers<br/>кілька Worker на одній черзі"}} -.- worker
 ```
 
