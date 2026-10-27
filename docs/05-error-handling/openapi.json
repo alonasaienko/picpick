@@ -1,0 +1,2333 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "WebApp",
+    "version": "1.0"
+  },
+  "paths": {
+    "/api/galleries": {
+      "post": {
+        "tags": [
+          "Galleries"
+        ],
+        "summary": "Створити власну галерею у статусі Draft без фото.",
+        "parameters": [
+          {
+            "name": "demoError",
+            "in": "query",
+            "description": "Лише Development: 401, 403, 415, 500. Для звичайного запиту залишити порожнім.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Назва й майбутній термін дії не далі ніж через 30 діб. Власника визначає сервер.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGalleryRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGalleryRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateGalleryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "VALIDATION_FAILED: некоректний JSON або тип; відсутні поля, порожня назва чи понад 100 символів. errors пояснює помилки полів.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: фотограф не ввійшов або сесія нечинна. Заглушка: demoError=401.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "GALLERY_ACTION_FORBIDDEN: користувач не має дозволу на дію. Заглушка: demoError=403.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Реальна політика default: 120 запитів за хвилину на IP.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Створено Draft, photoCount = 0. Location містить адресу деталей.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryResponse"
+                }
+              }
+            }
+          },
+          "415": {
+            "description": "UNSUPPORTED_MEDIA_TYPE: тіло запиту не JSON. Демонстрація у Swagger: demoError=415.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "GALLERY_EXPIRES_AT_INVALID: expiresAt уже настав або перевищує 30 діб. Причина в errors.expiresAt.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Galleries"
+        ],
+        "summary": "Отримати список власних галерей, новіші першими.",
+        "parameters": [
+          {
+            "name": "demoError",
+            "in": "query",
+            "description": "Лише Development: 401, 403, 500. Для звичайного запиту залишити порожнім.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_FAILED: невідомий demoError або демонстраційний параметр поза Development.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: фотограф не ввійшов або сесія нечинна. Заглушка: demoError=401.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "GALLERY_ACTION_FORBIDDEN: користувач не має дозволу на дію. Заглушка: demoError=403.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Реальна політика default: 120 запитів за хвилину на IP.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Метадані власних галерей за createdAt від новіших до старіших; при однаковому часі — galleryId за зростанням.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GalleryResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GalleryResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GalleryResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/galleries/{id}": {
+      "get": {
+        "tags": [
+          "Galleries"
+        ],
+        "summary": "Отримати метадані власної галереї.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID Gallery. Демо: 00000000-0000-0000-0000-000000000103 — Ready; 199 замість 103 — чужа, 999 — відсутня.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "demoError",
+            "in": "query",
+            "description": "Лише Development: 401, 403, 500. Для звичайного запиту залишити порожнім.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_FAILED: неправильний UUID або demoError. errors пояснює помилку.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: фотограф не ввійшов або сесія нечинна. Заглушка: demoError=401.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "GALLERY_ACTION_FORBIDDEN: користувач не має дозволу на дію. Заглушка: demoError=403. Чужа Gallery повертає 404.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Реальна політика default: 120 запитів за хвилину на IP.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Метадані власної Gallery; після expiresAt — Expired до очищення, не довше 24 годин.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GalleryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GALLERY_NOT_FOUND: галерея відсутня, видалена або чужа; однакове повідомлення без чужих даних.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Galleries"
+        ],
+        "summary": "Видалити власну галерею в будь-якому статусі.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID власної Gallery.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "demoError",
+            "in": "query",
+            "description": "Лише Development: 401, 403, 500. Для звичайного запиту залишити порожнім.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_FAILED: неправильний UUID або demoError. errors пояснює помилку.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: фотограф не ввійшов або сесія нечинна. Заглушка: demoError=401.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "GALLERY_ACTION_FORBIDDEN: користувач не має дозволу на дію. Заглушка: demoError=403. Чужа Gallery повертає 404.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Реальна політика default: 120 запитів за хвилину на IP.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "Тестові метадані видалено; тіла відповіді немає."
+          },
+          "404": {
+            "description": "GALLERY_NOT_FOUND: галерея відсутня, уже видалена або чужа; однакове загальне повідомлення.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/galleries/{id}/finalize": {
+      "post": {
+        "tags": [
+          "Galleries"
+        ],
+        "summary": "Фіналізувати чинну Ready або Shared; повтор Finalized також успішний.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "UUID власної Gallery.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "demoError",
+            "in": "query",
+            "description": "Лише Development: 401, 403, 500. Для звичайного запиту залишити порожнім.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_FAILED: неправильний UUID або demoError. errors пояснює помилку.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: фотограф не ввійшов або сесія нечинна. Заглушка: demoError=401.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "GALLERY_ACTION_FORBIDDEN: користувач не має дозволу на дію. Заглушка: demoError=403. Чужа Gallery повертає 404.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт частоти, Retry-After містить секунди. Реальна політика default: 120 запитів за хвилину на IP.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId без внутрішніх даних. Заглушка: demoError=500.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Finalized у gallery та повідомлення message. Повтор повертає «Галерею вже фіналізовано» без зміни даних.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinalizeGalleryResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinalizeGalleryResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FinalizeGalleryResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GALLERY_NOT_FOUND: галерея відсутня, видалена або чужа; однакове загальне повідомлення.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GALLERY_NOT_FINALIZABLE: Draft, Processing або Expired не дозволяють фіналізацію. Повтор чинної Finalized повертає 200.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/galleries/{galleryId}/photos": {
+      "post": {
+        "tags": [
+          "Photos"
+        ],
+        "summary": "Завантажити пакет фото в галерею (FR-201, FR-202).",
+        "parameters": [
+          {
+            "name": "galleryId",
+            "in": "path",
+            "description": "UUID власної галереї. Демо: …101 Draft, …103 Ready, …104 Shared, …105 Finalized, …999 відсутня.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "files": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "binary"
+                    },
+                    "description": "Файли JPEG, PNG, HEIC або RAW (DNG, CR2, CR3, NEF, ARW, RAF)."
+                  }
+                }
+              },
+              "encoding": {
+                "files": {
+                  "style": "form"
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "400": {
+            "description": "VALIDATION_FAILED: у запиті немає файлів або неправильний UUID.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: фотограф не ввійшов.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GALLERY_NOT_FOUND: галерея відсутня або чужа.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Прийнято хоча б один файл. Прийняті фото мають статус Uploaded; відхилені — індекс, ім'я, errorCode і причину.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadPhotosResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadPhotosResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UploadPhotosResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GALLERY_NOT_EDITABLE: галерея Shared, Finalized або Expired.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "PHOTO_ALL_FILES_REJECTED: відхилено всі файли, причини в errors[\"files[i]\"]; PHOTO_BATCH_LIMIT_EXCEEDED: понад 50 файлів або 1 ГБ; GALLERY_PHOTO_LIMIT_EXCEEDED: у галереї стало б понад 1000 фото.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "Photos"
+        ],
+        "summary": "Отримати список фото галереї з їхніми статусами (FR-204).",
+        "parameters": [
+          {
+            "name": "galleryId",
+            "in": "path",
+            "description": "UUID власної галереї. Демо: …102 Processing, …103 Ready, …106 Expired.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_FAILED: неправильний UUID.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: фотограф не ввійшов.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GALLERY_NOT_FOUND: галерея відсутня або чужа.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Фото з ім'ям файлу, статусом і причиною для Failed.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PhotoResponse"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PhotoResponse"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PhotoResponse"
+                  }
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GALLERY_EXPIRED: термін дії настав, список фото недоступний.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/galleries/{galleryId}/progress": {
+      "get": {
+        "tags": [
+          "Photos"
+        ],
+        "summary": "Отримати прогрес обробки галереї (FR-204).",
+        "parameters": [
+          {
+            "name": "galleryId",
+            "in": "path",
+            "description": "UUID власної галереї. Демо: …102 Processing, …103 Ready, …106 Expired.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_FAILED: неправильний UUID.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: фотограф не ввійшов.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GALLERY_NOT_FOUND: галерея відсутня або чужа.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Кількість фото: усього, готових, з помилкою, в обробці.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessingProgressResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessingProgressResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProcessingProgressResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GALLERY_EXPIRED: термін дії настав, дані фото недоступні; опитування слід припинити.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/galleries/{galleryId}/photos/{photoId}/retry": {
+      "post": {
+        "tags": [
+          "Photos"
+        ],
+        "summary": "Повторити обробку фото зі статусом Failed (FR-206).",
+        "parameters": [
+          {
+            "name": "galleryId",
+            "in": "path",
+            "description": "UUID власної галереї. Демо: …103 Ready.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "photoId",
+            "in": "path",
+            "description": "UUID фото. Демо: …202 Failed, …201 Ready.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "VALIDATION_FAILED: неправильний UUID.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: фотограф не ввійшов.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GALLERY_NOT_FOUND або PHOTO_NOT_FOUND: галерея чи фото відсутні або чужі.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "Фото повернуто в статус Uploaded, задача знову в черзі.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PhotoResponse"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "PHOTO_NOT_FAILED: фото не у статусі Failed; GALLERY_NOT_EDITABLE: галерея Shared, Finalized або Expired.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/galleries/{galleryId}/share-links": {
+      "post": {
+        "tags": [
+          "Share"
+        ],
+        "summary": "Створити посилання для клієнта (FR-301).",
+        "parameters": [
+          {
+            "name": "galleryId",
+            "in": "path",
+            "description": "UUID галереї фотографа.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "description": "Необов'язковий термін дії посилання в UTC.",
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShareLinkRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShareLinkRequest"
+              }
+            },
+            "application/*+json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateShareLinkRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Посилання створено, стан галереї Ready змінено на Shared.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateShareLinkResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateShareLinkResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateShareLinkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED: некоректний UUID або JSON.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: фотограф не ввійшов.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GALLERY_NOT_FOUND: галерея відсутня або чужа.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GALLERY_NOT_SHAREABLE: галерея в стані Draft, Processing, Finalized або Expired, посилання створити не можна (FR-301 п.4).",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "SHARE_LINK_EXPIRES_AT_INVALID: термін дії не відповідає правилам галереї.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/galleries/{galleryId}/share-links/{shareLinkId}/revoke": {
+      "post": {
+        "tags": [
+          "Share"
+        ],
+        "summary": "Відкликати посилання для клієнта (FR-302).",
+        "parameters": [
+          {
+            "name": "galleryId",
+            "in": "path",
+            "description": "UUID власної галереї фотографа.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "shareLinkId",
+            "in": "path",
+            "description": "UUID посилання в цій галереї.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Посилання має стан Revoked; повторне відкликання є успішним.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeShareLinkResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeShareLinkResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeShareLinkResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED: некоректний UUID.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: фотограф не ввійшов.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GALLERY_NOT_FOUND або SHARE_LINK_NOT_FOUND: галерею чи посилання не знайдено.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SHARE_LINK_NOT_ACTIVE: посилання прострочене й уже не може бути відкликане.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/share-links/{token}/previews": {
+      "get": {
+        "tags": [
+          "Share"
+        ],
+        "summary": "Отримати прев'ю галереї за посиланням (FR-303).",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "description": "Секретний токен клієнтського посилання.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Назва галереї, нікнейм фотографа, статус вибору та прев'ю зі статусом Ready.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharePreviewsResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharePreviewsResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharePreviewsResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SHARE_LINK_INVALID: токен невідомий, прострочений або відкликаний.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/share-links/{token}/likes/{photoId}": {
+      "put": {
+        "tags": [
+          "Share"
+        ],
+        "summary": "Поставити лайк на прев'ю (FR-304).",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "description": "Секретний токен клієнтського посилання.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "photoId",
+            "in": "path",
+            "description": "UUID фото зі статусом Ready.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Лайк встановлено; повторний запит є ідемпотентним.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetLikeResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetLikeResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetLikeResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SHARE_LINK_INVALID або PHOTO_NOT_FOUND.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SELECTION_ALREADY_SUBMITTED або GALLERY_FINALIZED: лайк більше не можна змінити.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED: photoId має неправильний формат."
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Share"
+        ],
+        "summary": "Зняти лайк із прев'ю (FR-304).",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "description": "Секретний токен клієнтського посилання.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "photoId",
+            "in": "path",
+            "description": "UUID фото зі статусом Ready.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Лайк знято; зняття відсутнього лайка також є успішним.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetLikeResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetLikeResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SetLikeResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SHARE_LINK_INVALID або PHOTO_NOT_FOUND.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SELECTION_ALREADY_SUBMITTED або GALLERY_FINALIZED: лайк більше не можна змінити.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED: photoId має неправильний формат."
+          }
+        }
+      }
+    },
+    "/api/share-links/{token}/likes": {
+      "get": {
+        "tags": [
+          "Share"
+        ],
+        "summary": "Отримати зміни лайків після курсора для синхронізації пристроїв (FR-304).",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "description": "Секретний токен клієнтського посилання.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "since",
+            "in": "query",
+            "description": "Необов'язковий невід'ємний номер останньої отриманої операції.",
+            "schema": {
+              "type": "integer",
+              "format": "int64",
+              "default": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Зміни лайків після since і поточний номер операції.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikeChangesResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikeChangesResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikeChangesResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED: since має неправильний формат.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SHARE_LINK_INVALID: токен недійсний.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/share-links/{token}/selection/submit": {
+      "post": {
+        "tags": [
+          "Share"
+        ],
+        "summary": "Відправити вибір клієнта фотографу (FR-305).",
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "description": "Секретний токен клієнтського посилання.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Вибір має статус Submitted; повторна відправка повертає той самий результат.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitSelectionResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitSelectionResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubmitSelectionResponse"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "SHARE_LINK_INVALID: токен недійсний.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "SELECTION_EMPTY або GALLERY_FINALIZED.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/galleries/{galleryId}/selection": {
+      "get": {
+        "tags": [
+          "Share"
+        ],
+        "summary": "Переглянути список обраних кадрів для фотографа (FR-306).",
+        "parameters": [
+          {
+            "name": "galleryId",
+            "in": "path",
+            "description": "UUID власної галереї фотографа.",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Статус вибору та список обраних кадрів.",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionResponse"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionResponse"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SelectionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "VALIDATION_FAILED: некоректний UUID.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "UNAUTHENTICATED: фотограф не ввійшов.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "GALLERY_NOT_FOUND або SELECTION_NOT_FOUND.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "GALLERY_EXPIRED: галерея прострочена.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "RATE_LIMIT_EXCEEDED: перевищено ліміт запитів, Retry-After містить секунди.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "INTERNAL_ERROR: загальне повідомлення й traceId.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "WebApp"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AcceptedPhoto": {
+        "type": "object",
+        "properties": {
+          "photoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fileName": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Прийняте фото зі статусом Uploaded."
+      },
+      "ApiProblemDetails": {
+        "required": [
+          "errorCode",
+          "traceId"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "nullable": true
+          },
+          "title": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "detail": {
+            "type": "string",
+            "nullable": true
+          },
+          "instance": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "traceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "errors": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "nullable": true
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": { }
+      },
+      "CreateGalleryRequest": {
+        "required": [
+          "expiresAt",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "maxLength": 100,
+            "minLength": 1,
+            "type": "string",
+            "description": "Назва: 1–100 символів після видалення крайніх пробілів."
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "Дата ISO 8601 з часовим поясом у майбутньому, не далі ніж через 30 діб; зберігається в UTC.",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Дані нової Gallery: обов'язкові назва й термін дії; власника визначає сервер."
+      },
+      "CreateShareLinkRequest": {
+        "type": "object",
+        "properties": {
+          "expiresAt": {
+            "type": "string",
+            "description": "Необов'язковий термін дії посилання в UTC.",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Параметри створення посилання для клієнта."
+      },
+      "CreateShareLinkResponse": {
+        "type": "object",
+        "properties": {
+          "shareLinkId": {
+            "type": "string",
+            "description": "Ідентифікатор посилання.",
+            "format": "uuid"
+          },
+          "galleryId": {
+            "type": "string",
+            "description": "Ідентифікатор галереї.",
+            "format": "uuid"
+          },
+          "token": {
+            "type": "string",
+            "description": "Секретний токен. Передається фотографу лише тут і ніколи не потрапляє в помилки.",
+            "nullable": true
+          },
+          "url": {
+            "type": "string",
+            "description": "Відносна адреса сторінки клієнта.",
+            "nullable": true
+          },
+          "state": {
+            "type": "string",
+            "description": "Стан посилання: `Active`.",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "Дата, після якої посилання перестає діяти.",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Створене посилання для клієнта (ShareLink)."
+      },
+      "FinalizeGalleryResponse": {
+        "type": "object",
+        "properties": {
+          "gallery": {
+            "$ref": "#/components/schemas/GalleryResponse"
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GalleryResponse": {
+        "type": "object",
+        "properties": {
+          "galleryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "photoCount": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LikeChange": {
+        "type": "object",
+        "properties": {
+          "photoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "liked": {
+            "type": "boolean"
+          },
+          "opSeq": {
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Одна зміна лайка для синхронізації пристроїв."
+      },
+      "LikeChangesResponse": {
+        "type": "object",
+        "properties": {
+          "opSeq": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "changes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LikeChange"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Зміни лайків після курсора."
+      },
+      "PhotoResponse": {
+        "type": "object",
+        "properties": {
+          "photoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "fileName": {
+            "type": "string",
+            "nullable": true
+          },
+          "status": {
+            "type": "string",
+            "nullable": true
+          },
+          "failureReason": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Фото галереї з його статусом; причина заповнена лише для Failed."
+      },
+      "ProcessingProgressResponse": {
+        "type": "object",
+        "properties": {
+          "galleryStatus": {
+            "type": "string",
+            "nullable": true
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ready": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "failed": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "inProgress": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Прогрес обробки галереї (FR-204)."
+      },
+      "RejectedFile": {
+        "type": "object",
+        "properties": {
+          "index": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fileName": {
+            "type": "string",
+            "nullable": true
+          },
+          "errorCode": {
+            "type": "string",
+            "nullable": true
+          },
+          "message": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Відхилений файл: індекс у запиті, ім'я, errorCode і причина."
+      },
+      "RevokeShareLinkResponse": {
+        "type": "object",
+        "properties": {
+          "shareLinkId": {
+            "type": "string",
+            "description": "Ідентифікатор посилання.",
+            "format": "uuid"
+          },
+          "galleryId": {
+            "type": "string",
+            "description": "Ідентифікатор галереї.",
+            "format": "uuid"
+          },
+          "state": {
+            "type": "string",
+            "description": "Стан посилання: `Revoked`.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Результат відкликання посилання."
+      },
+      "SelectionItem": {
+        "type": "object",
+        "properties": {
+          "photoId": {
+            "type": "string",
+            "description": "Ідентифікатор фото.",
+            "format": "uuid"
+          },
+          "fileName": {
+            "type": "string",
+            "description": "Ім'я файлу оригіналу.",
+            "nullable": true
+          },
+          "previewUrl": {
+            "type": "string",
+            "description": "Тимчасова адреса прев'ю.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Один обраний кадр."
+      },
+      "SelectionResponse": {
+        "type": "object",
+        "properties": {
+          "galleryId": {
+            "type": "string",
+            "description": "Ідентифікатор галереї.",
+            "format": "uuid"
+          },
+          "status": {
+            "type": "string",
+            "description": "Статус вибору: `Open` або `Submitted`.",
+            "nullable": true
+          },
+          "submittedAt": {
+            "type": "string",
+            "description": "Момент відправки; `null`, поки вибір `Open`.",
+            "format": "date-time",
+            "nullable": true
+          },
+          "count": {
+            "type": "integer",
+            "description": "Кількість обраних кадрів.",
+            "format": "int32"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SelectionItem"
+            },
+            "description": "Обрані кадри.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Вибір клієнта для фотографа."
+      },
+      "SetLikeResponse": {
+        "type": "object",
+        "properties": {
+          "photoId": {
+            "type": "string",
+            "description": "Ідентифікатор фото.",
+            "format": "uuid"
+          },
+          "liked": {
+            "type": "boolean",
+            "description": "Чи кадр тепер обраний."
+          },
+          "likedCount": {
+            "type": "integer",
+            "description": "Загальна кількість лайків у виборі.",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false,
+        "description": "Стан лайка після запиту."
+      },
+      "SharePreviewItem": {
+        "type": "object",
+        "properties": {
+          "photoId": {
+            "type": "string",
+            "description": "Ідентифікатор фото.",
+            "format": "uuid"
+          },
+          "previewUrl": {
+            "type": "string",
+            "description": "Тимчасова адреса прев'ю (без внутрішніх шляхів сховища).",
+            "nullable": true
+          },
+          "liked": {
+            "type": "boolean",
+            "description": "Чи поставив клієнт лайк."
+          }
+        },
+        "additionalProperties": false,
+        "description": "Одне прев'ю в галереї клієнта."
+      },
+      "SharePreviewsResponse": {
+        "type": "object",
+        "properties": {
+          "galleryName": {
+            "type": "string",
+            "description": "Назва галереї.",
+            "nullable": true
+          },
+          "nickname": {
+            "type": "string",
+            "description": "Нікнейм фотографа (email не розкривається).",
+            "nullable": true
+          },
+          "galleryStatus": {
+            "type": "string",
+            "description": "Статус галереї: `Shared` або `Finalized`.",
+            "nullable": true
+          },
+          "selectionStatus": {
+            "type": "string",
+            "description": "Статус вибору: `Open` або `Submitted`.",
+            "nullable": true
+          },
+          "expiresAt": {
+            "type": "string",
+            "description": "Дата завершення терміну дії посилання.",
+            "format": "date-time"
+          },
+          "likedCount": {
+            "type": "integer",
+            "description": "Кількість кадрів із лайком.",
+            "format": "int32"
+          },
+          "previews": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SharePreviewItem"
+            },
+            "description": "Прев'ю з вотермаркою; оригінали клієнту не показуються.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Галерея для клієнта: прев'ю з позначками лайків."
+      },
+      "SubmitSelectionResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Статус вибору: `Submitted`.",
+            "nullable": true
+          },
+          "submittedAt": {
+            "type": "string",
+            "description": "Момент відправки.",
+            "format": "date-time"
+          },
+          "likedCount": {
+            "type": "integer",
+            "description": "Кількість обраних кадрів.",
+            "format": "int32"
+          },
+          "likedPhotoIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "description": "Ідентифікатори обраних фото.",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Результат відправки вибору."
+      },
+      "UploadPhotosResponse": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AcceptedPhoto"
+            },
+            "nullable": true
+          },
+          "rejected": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RejectedFile"
+            },
+            "nullable": true
+          }
+        },
+        "additionalProperties": false,
+        "description": "Результат завантаження: прийняті фото й відхилені файли (FR-201, FR-202)."
+      }
+    }
+  },
+  "tags": [
+    {
+      "name": "Galleries",
+      "description": "API зони A: створення, перегляд, фіналізація та видалення власних галерей."
+    },
+    {
+      "name": "Photos",
+      "description": "API зони B: завантаження фото, прогрес обробки, список фото і повтор обробки."
+    },
+    {
+      "name": "Share",
+      "description": "API зони C: посилання для клієнта, прев'ю, лайки й відправка вибору."
+    }
+  ]
+}
