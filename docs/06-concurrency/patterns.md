@@ -8,9 +8,9 @@
 
 | ID сценарію | Патерн | Авторка | Статус |
 |---|---|---|---|
-| CS-101 | Оптимістичне блокування (Optimistic Concurrency Control) | Юлія | взято |
-| CS-102 | Вибір лідера (Leader Election) | Юлія | взято |
-| CS-201 | Конкуруючі споживачі (Competing Consumers) | Альона | взято |
-| CS-202 | Транзакційний outbox (Transactional Outbox) | Альона | взято |
-| CS-301 | Ключ ідемпотентності (Idempotency Key) | Уляна | взято |
-| CS-302 | LWW-множина (LWW-Element-Set, CRDT) | Уляна | взято |
+| CS-101 | Оптимістичне блокування (Optimistic Concurrency Control) | Юлія | готово |
+| CS-102 | Вибір лідера (Leader Election) | Юлія | готово |
+| CS-201 | Конкуруючі споживачі (Competing Consumers) | Альона | готово |
+| CS-202 | Транзакційний outbox (Transactional Outbox) | Альона | готово |
+| CS-301 | Ключ ідемпотентності (Idempotency Key) | Уляна | готово |
+| CS-302 | LWW-множина (LWW-Element-Set, CRDT) | Уляна | готово |
