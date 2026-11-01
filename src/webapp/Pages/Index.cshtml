@@ -1,10 +1,63 @@
 ﻿@page
 @model IndexModel
 @{
-    ViewData["Title"] = "Home page";
+    ViewData["Title"] = "Відбір фото для фотографів";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="hero" data-sparkles="36">
+    <div class="container hero-inner">
+        <div class="row align-items-center g-4 g-lg-5">
+            <div class="col-lg-7">
+                <h1>Відбір фото без переписки й файлообмінників</h1>
+                <p class="hero-lead">
+                    Завантажте зйомку, надішліть клієнту приватне посилання — і отримайте точний список кадрів,
+                    які він обрав. Клієнт бачить лише прев'ю з вотермаркою, оригінали залишаються у вас.
+                </p>
+                <div class="hero-actions">
+                    <a class="btn btn-primary btn-lg" href="/Galleries/Create">Створити галерею</a>
+                    <a class="btn btn-ghost btn-lg" href="#how-it-works">Як це працює</a>
+                </div>
+            </div>
+            <div class="col-lg-5 d-none d-sm-block" aria-hidden="true">
+                <div class="pill-stack">
+                    <div class="pill pill-1"><span>IMG_0412.jpg</span></div>
+                    <div class="pill pill-2"><span>IMG_0418.jpg</span></div>
+                    <div class="pill pill-3"><span>IMG_0423.jpg</span><span>&#9829;</span></div>
+                    <div class="pill pill-4"><span>IMG_0431.jpg</span><span>&#9829;</span></div>
+                    <div class="pill pill-5"><span>IMG_0437.jpg</span><span>&#9829;</span></div>
+                    <div class="pill pill-6"><span>Обрано: 3 кадри</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section" id="how-it-works" data-sparkles="10" data-sparkles-soft>
+    <div class="container">
+        <h2 class="section-title">Як це працює</h2>
+        <p class="section-lead">Три кроки від зйомки до списку обраних кадрів.</p>
+        <div class="row g-4">
+            <div class="col-md-4">
+                <article class="card-soft">
+                    <span class="step-number step-1">1</span>
+                    <h3>Завантажте фото</h3>
+                    <p>Створіть галерею й завантажте сотні кадрів одним пакетом — JPEG, HEIC чи RAW. PicPick сам зробить прев'ю з вотермаркою.</p>
+                </article>
+            </div>
+            <div class="col-md-4">
+                <article class="card-soft">
+                    <span class="step-number step-2">2</span>
+                    <h3>Клієнт обирає</h3>
+                    <p>Надішліть приватне посилання. Клієнт без реєстрації переглядає прев'ю на телефоні чи ноутбуці й лайкає кадри.</p>
+                </article>
+            </div>
+            <div class="col-md-4">
+                <article class="card-soft">
+                    <span class="step-number step-3">3</span>
+                    <h3>Отримайте список</h3>
+                    <p>Після відправки вибору ви бачите точні імена обраних файлів. Прострочені галереї видаляються автоматично.</p>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>

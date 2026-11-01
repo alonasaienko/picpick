@@ -51,6 +51,30 @@ pip install -r src/worker/requirements.txt
 python src/worker/main.py
 ```
 
+## Design
+
+The UI has two colour themes. Visitors switch between them with the button in the header; the choice is remembered in the browser.
+
+| Sunset (default) | Barbie |
+|---|---|
+| ![Sunset theme](docs/img/design/design-sunset.jpg) | ![Barbie theme](docs/img/design/design-barbie.jpg) |
+| ![Sunset theme on a phone](docs/img/design/design-sunset-mobile.jpg) | ![Barbie theme on a phone](docs/img/design/design-barbie-mobile.jpg) |
+
+| Theme | Palette | Feel |
+|---|---|---|
+| **Sunset** | `#1B1931` `#44174E` `#662249` `#A34054` `#ED9E59` `#E9BCB9` | Night sky from navy to plum with a soft apricot glow, blush text, apricot call-to-action |
+| **Barbie** | `#E0218A` `#E94196` `#ED5C9B` `#F768A0` `#F18DBC` `#F7B9D7` `#FACDE5` `#FFECF6` | Hot-pink header, pearl gradient, script logo in Pacifico |
+
+**How it works.**
+- All colours are CSS variables in [`site.css`](src/webapp/wwwroot/css/site.css): the default theme lives in `:root`, the Barbie theme overrides the same variables under `[data-theme="pink"]`. Components only use variables, so a new theme is one more block of values.
+- A couple of derived shades (for example `#C2187A` for Barbie buttons) are added where a palette colour does not reach WCAG AA contrast for text.
+- Fonts: **Unbounded** for headings, **Manrope** for text, **Pacifico** for the Barbie logo — all from Google Fonts with Cyrillic support.
+- Animated sparkles twinkle in the background of key sections; they are decorative, ignore clicks and stay still when the system asks to reduce motion.
+- The layout is responsive: the menu collapses below 768 px, and every page fits a 375 px phone screen without horizontal scrolling.
+- Pages that are not built yet (for example `/Galleries/Create` or `/Account/Login`) show a friendly 404 page; API routes keep their JSON errors.
+
+![404 page for a page that is not built yet](docs/img/design/design-404.jpg)
+
 ## Documentation
 
 All design documents live in [`docs/`](docs/). Start with the [glossary](docs/glossary.md).

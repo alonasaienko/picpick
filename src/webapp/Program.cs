@@ -24,6 +24,9 @@ else
 }
 
 app.UseHttpsRedirection();
+// Для сторінок (не /api) коди помилок, зокрема 404 ще не створених сторінок, показує дружня сторінка /Status/{code}.
+app.UseWhen(context => !context.Request.Path.StartsWithSegments("/api"),
+    pages => pages.UseStatusCodePagesWithReExecute("/Status/{0}"));
 app.UseStaticFiles();
 app.UseRouting();
 app.UseApiErrorHandling();

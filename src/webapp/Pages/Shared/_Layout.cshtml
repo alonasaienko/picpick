@@ -1,44 +1,75 @@
 ﻿<!DOCTYPE html>
-<html lang="en">
+<html lang="uk">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - WebApp</title>
+    <title>@ViewData["Title"] — PicPick</title>
+    <script>
+        // Тема ставиться до першого показу сторінки, щоб не блимала тема за замовчуванням.
+        try {
+            if (localStorage.getItem("picpick-theme") === "pink") {
+                document.documentElement.dataset.theme = "pink";
+            }
+        } catch (e) { }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Pacifico&family=Unbounded:wght@500;600&display=swap" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/WebApp.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+    <header class="site-header">
+        <nav class="navbar navbar-expand-md navbar-dark">
             <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">WebApp</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+                <a class="brand" asp-page="/Index" aria-label="PicPick — на головну">
+                    <svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true">
+                        <defs>
+                            <linearGradient id="logo-gradient" x1="0" y1="0" x2="1" y2="1">
+                                <stop offset="0" class="logo-from" />
+                                <stop offset="1" class="logo-to" />
+                            </linearGradient>
+                        </defs>
+                        <rect x="1" y="1" width="30" height="30" rx="9" fill="url(#logo-gradient)" />
+                        <path d="M16 23.5s-6.5-3.9-6.5-8.4a3.6 3.6 0 0 1 6.5-2.2 3.6 3.6 0 0 1 6.5 2.2c0 4.5-6.5 8.4-6.5 8.4z" class="logo-heart" />
+                    </svg>
+                    <span class="brand-name">PicPick</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav"
+                        aria-controls="main-nav" aria-expanded="false" aria-label="Відкрити меню">
                     <span class="navbar-toggler-icon"></span>
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
+                <div class="collapse navbar-collapse justify-content-end" id="main-nav">
+                    <ul class="navbar-nav align-items-md-center gap-1 mt-2 mt-md-0">
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
+                            <a class="nav-link" asp-page="/Galleries/Index">Мої галереї</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
+                            <a class="nav-link" href="/swagger">API (Swagger)</a>
+                        </li>
+                        <li class="nav-item ms-md-2 my-2 my-md-0">
+                            <button type="button" class="theme-toggle" id="theme-toggle" aria-label="Перемкнути тему">
+                                <span class="theme-swatch" aria-hidden="true"></span>
+                                <span class="theme-label">Рожева тема</span>
+                            </button>
+                        </li>
+                        <li class="nav-item ms-md-1 mb-2 mb-md-0">
+                            <a class="btn btn-login" href="/Account/Login">Вхід</a>
                         </li>
                     </ul>
                 </div>
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - WebApp - <a asp-area="" asp-page="/Privacy">Privacy</a>
+    <main role="main">
+        @RenderBody()
+    </main>
+
+    <footer class="site-footer">
+        <div class="container d-flex flex-column flex-sm-row justify-content-between gap-1">
+            <span>&copy; 2026 PicPick</span>
+            <span>Командний проєкт з об'єктно-орієнтованого аналізу та проєктування</span>
         </div>
     </footer>
 

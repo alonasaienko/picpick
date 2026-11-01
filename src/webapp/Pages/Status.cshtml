@@ -1,0 +1,31 @@
+@page "/Status/{code:int}"
+@model StatusModel
+@{
+    ViewData["Title"] = Model.IsNotFound ? "Сторінки ще немає" : "Помилка";
+}
+
+<section class="section status-page" data-sparkles="22" data-sparkles-soft>
+    <div class="container">
+        <div class="card-soft placeholder-card">
+            <p class="status-code">@Model.Code</p>
+            @if (Model.IsNotFound)
+            {
+                <h1 class="h3">Цієї сторінки поки не існує</h1>
+                <p class="mb-2">Але вона обов'язково з'явиться ✨ PicPick ще росте, і цю частину ми саме будуємо.</p>
+            }
+            else
+            {
+                <h1 class="h3">Щось пішло не так</h1>
+                <p class="mb-2">Не вдалося обробити запит. Спробуйте пізніше.</p>
+            }
+            @if (!string.IsNullOrEmpty(Model.OriginalPath))
+            {
+                <p class="small mb-4"><code>@Model.OriginalPath</code></p>
+            }
+            <div class="d-flex flex-wrap justify-content-center gap-2">
+                <a class="btn btn-primary" asp-page="/Index">На головну</a>
+                <a class="btn btn-outline-theme" asp-page="/Galleries/Index">Мої галереї</a>
+            </div>
+        </div>
+    </div>
+</section>
