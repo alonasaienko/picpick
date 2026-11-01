@@ -1,5 +1,164 @@
+/* PicPick — спільні стилі.
+   Кольори задано токенами в :root (тема «Захід», за замовчуванням)
+   і перевизначено для рожевої теми в [data-theme="pink"]. Компоненти використовують лише токени. */
+
+:root {
+  /* Палітра «Захід» */
+  --color-ink: #1B1931;
+  --color-plum: #44174E;
+  --color-wine: #662249;
+  --color-rose: #A34054;
+  --color-apricot: #ED9E59;
+  --color-blush: #E9BCB9;
+
+  /* Загальні */
+  --color-bg: #FAF6F7;
+  --color-surface: #FFFFFF;
+  --color-text: var(--color-ink);
+  --color-text-muted: #6B5F73;
+  --color-border: #ECE2E8;
+  --color-link: var(--color-plum);
+  --color-link-hover: var(--color-wine);
+  --color-focus: var(--color-apricot);
+
+  /* Кнопка головної дії */
+  --color-primary: var(--color-apricot);
+  --color-primary-hover: #E4893B;
+  --color-on-primary: var(--color-ink);
+
+  /* Шапка й футер */
+  --header-bg: linear-gradient(90deg, var(--color-ink) 0%, var(--color-plum) 100%);
+  --header-text: var(--color-blush);
+  --header-text-strong: #FFFFFF;
+  --footer-bg: var(--color-ink);
+  --footer-text: var(--color-blush);
+  --logo-from: var(--color-blush);
+  --logo-to: var(--color-apricot);
+  --logo-heart: var(--color-plum);
+
+  /* Перший екран */
+  /* Нічне небо з синього у фіолетовий, а абрикосове «сонце» світиться знизу окремим шаром:
+     так помаранчевий не змішується з винним і не дає брудного коричневого */
+  --hero-bg:
+    radial-gradient(ellipse 70% 60% at 85% 110%, rgba(237, 158, 89, 0.55) 0%, rgba(233, 188, 185, 0.16) 45%, transparent 72%),
+    linear-gradient(165deg, var(--color-ink) 0%, var(--color-plum) 58%, var(--color-wine) 100%);
+  --hero-text: #FFFFFF;
+  --hero-lead: var(--color-blush);
+  --ghost-text: #FFFFFF;
+  --ghost-border: rgba(255, 255, 255, 0.6);
+  --ghost-hover-bg: var(--color-blush);
+  --ghost-hover-text: var(--color-ink);
+
+  /* Кроки й «пігулки» */
+  --step-1-bg: var(--color-ink);     --step-1-text: #FFFFFF;
+  --step-2-bg: var(--color-plum);    --step-2-text: #FFFFFF;
+  --step-3-bg: var(--color-apricot); --step-3-text: var(--color-ink);
+  --pill-1-bg: var(--color-ink);     --pill-1-text: var(--color-blush);
+  --pill-2-bg: var(--color-plum);    --pill-2-text: var(--color-blush);
+  --pill-3-bg: var(--color-wine);    --pill-3-text: var(--color-blush);
+  --pill-4-bg: var(--color-rose);    --pill-4-text: #FFFFFF;
+  --pill-5-bg: var(--color-apricot); --pill-5-text: var(--color-ink);
+  --pill-6-bg: var(--color-blush);   --pill-6-text: var(--color-ink);
+
+  /* Блискітки */
+  --sparkle-color: #FFFFFF;
+  --sparkle-alt-color: var(--color-blush);
+  --sparkle-glow: rgba(233, 188, 185, 0.9);
+  --sparkle-soft-color: var(--color-plum);
+  --pill-border: rgba(233, 188, 185, 0.25);
+
+  /* Шрифти з підтримкою кирилиці */
+  --font-heading: "Unbounded", system-ui, sans-serif;
+  --font-body: "Manrope", system-ui, sans-serif;
+
+  /* Логотип і заголовок першого екрана */
+  --font-brand: var(--font-heading);
+  --brand-weight: 600;
+  --brand-size: 1.25rem;
+  --brand-shadow: none;
+  --hero-title: var(--hero-text);
+  --login-bg: var(--color-blush);
+  --login-text: var(--color-ink);
+  --login-hover-bg: #FFFFFF;
+  --hero-title-shadow: none;
+
+  --radius-card: 1.25rem;
+  --radius-pill: 999px;
+  --shadow-card: 0 0.5rem 1.5rem rgba(27, 25, 49, 0.08);
+}
+
+/* Рожева тема («Барбі») */
+[data-theme="pink"] {
+  --color-hot: #E0218A;         /* фірмовий «барбі-рожевий»: заголовок, акценти */
+  --color-hot-deep: #C2187A;    /* похідний, темніший: кнопки й текст на білому (контраст 5.7:1) */
+  --color-raspberry: #E94196;
+  --color-bubblegum: #F768A0;
+  --color-candy: #F18DBC;
+  --color-blossom: #F7B9D7;
+  --color-cotton: #FACDE5;
+  --color-pearl: #FFECF6;
+  --color-deep: #4A0D2E;        /* похідний: основний текст */
+
+  --color-bg: #FFF5FA;
+  --color-text: var(--color-deep);
+  --color-text-muted: #8A3A64;
+  --color-border: #F8D3E6;
+  --color-link: var(--color-hot-deep);
+  --color-link-hover: var(--color-hot);
+  --color-focus: var(--color-hot);
+
+  --color-primary: var(--color-hot-deep);
+  --color-primary-hover: #A8146A;
+  --color-on-primary: #FFFFFF;
+
+  --header-bg: linear-gradient(90deg, var(--color-hot-deep) 0%, var(--color-hot) 100%);
+  --header-text: #FFFFFF;
+  --footer-bg: var(--color-hot-deep);
+  --footer-text: #FFFFFF;
+  --logo-from: #FFFFFF;
+  --logo-to: var(--color-pearl);
+  --logo-heart: var(--color-hot);
+  --font-brand: "Pacifico", cursive;
+  --brand-weight: 400;
+  --brand-size: 1.6rem;
+  --brand-shadow: 0 0 10px rgba(255, 236, 246, 0.9), 0 2px 0 var(--color-hot-deep);
+
+  --hero-bg: linear-gradient(160deg, var(--color-pearl) 0%, var(--color-cotton) 55%, var(--color-blossom) 100%);
+  --hero-text: var(--color-deep);
+  --hero-title: var(--color-hot);
+  --login-bg: var(--color-pearl);
+  --login-text: var(--color-hot-deep);
+  --login-hover-bg: #FFFFFF;
+  --hero-title-shadow: 0 2px 12px rgba(255, 255, 255, 0.9);
+  --hero-lead: var(--color-deep);
+  --ghost-text: var(--color-hot-deep);
+  --ghost-border: var(--color-hot-deep);
+  --ghost-hover-bg: var(--color-hot-deep);
+  --ghost-hover-text: #FFFFFF;
+
+  --step-1-bg: var(--color-hot-deep);   --step-1-text: #FFFFFF;
+  --step-2-bg: var(--color-bubblegum);  --step-2-text: var(--color-deep);
+  --step-3-bg: var(--color-blossom);    --step-3-text: var(--color-deep);
+  --pill-1-bg: var(--color-hot-deep);   --pill-1-text: #FFFFFF;
+  --pill-2-bg: var(--color-hot);        --pill-2-text: #FFFFFF;
+  --pill-3-bg: var(--color-raspberry);  --pill-3-text: var(--color-deep);
+  --pill-4-bg: var(--color-bubblegum);  --pill-4-text: var(--color-deep);
+  --pill-5-bg: var(--color-candy);      --pill-5-text: var(--color-deep);
+  --pill-6-bg: #FFFFFF;                 --pill-6-text: var(--color-hot-deep);
+
+  --sparkle-color: #FFFFFF;
+  --sparkle-alt-color: var(--color-hot);
+  --sparkle-glow: rgba(224, 33, 138, 1);
+  --sparkle-soft-color: var(--color-bubblegum);
+  --pill-border: transparent;
+
+  --shadow-card: 0 0.5rem 1.5rem rgba(224, 33, 138, 0.12);
+}
+
+/* Основа */
+
 html {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 @media (min-width: 768px) {
@@ -8,15 +167,439 @@ html {
   }
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
 body {
-  margin-bottom: 60px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-bg);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+main {
+  flex: 1 0 auto;
+}
+
+h1, h2, h3 {
+  font-family: var(--font-heading);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+a {
+  color: var(--color-link);
+}
+
+a:hover {
+  color: var(--color-link-hover);
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+/* Шапка */
+
+.site-header {
+  background: var(--header-bg);
+}
+
+.site-header .navbar {
+  padding-block: 0.75rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--header-text);
+  text-decoration: none;
+}
+
+.brand-name {
+  font-family: var(--font-brand);
+  font-weight: var(--brand-weight);
+  font-size: var(--brand-size);
+  line-height: 1.2;
+  color: var(--header-text-strong);
+  text-shadow: var(--brand-shadow);
+}
+
+.logo-from { stop-color: var(--logo-from); }
+.logo-to { stop-color: var(--logo-to); }
+.logo-heart { fill: var(--logo-heart); }
+
+/* Селектор сильніший за .navbar-dark .navbar-nav .nav-link з Bootstrap 5.1, який робить посилання напівпрозорими */
+.site-header .navbar-nav .nav-link {
+  white-space: nowrap;
+  color: var(--header-text);
+  font-weight: 500;
+  border-radius: var(--radius-pill);
+  padding-inline: 0.9rem !important;
+}
+
+.site-header .navbar-nav .nav-link:hover,
+.site-header .navbar-nav .nav-link.active {
+  color: var(--header-text-strong);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.site-header .navbar-toggler {
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* Кнопки в шапці: вхід і перемикач теми мають однакові розміри */
+
+.site-header .btn-login,
+.site-header .theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 2.5rem;
+  padding: 0 1.1rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1;
+  white-space: nowrap;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: var(--radius-pill);
+}
+
+/* «Вхід» — суцільна світла підкладка; рамка того самого кольору, щоб висота збігалася з перемикачем */
+.site-header .btn-login {
+  color: var(--login-text);
+  background: var(--login-bg);
+  border-color: var(--login-bg);
+}
+
+.site-header .btn-login:hover {
+  color: var(--login-text);
+  background: var(--login-hover-bg);
+  border-color: var(--login-hover-bg);
+}
+
+/* Перемикач теми */
+
+.theme-toggle {
+  color: var(--header-text-strong);
+  background: rgba(255, 255, 255, 0.12);
+  cursor: pointer;
+}
+
+.theme-toggle:hover {
+  color: var(--header-text-strong);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.theme-swatch {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+}
+
+/* Кружечок показує тему, на яку перемкнеться кнопка */
+/* Кружечок — мініатюра теми, на яку перемкнеться кнопка */
+/* Барбі: гарячий рожевий із перламутровим відблиском */
+.theme-swatch {
+  background:
+    radial-gradient(circle at 32% 30%, #FFECF6 0 18%, rgba(255, 236, 246, 0) 42%),
+    linear-gradient(145deg, #F768A0 0%, #E0218A 100%);
+}
+
+/* «Захід»: нічне небо з абрикосовим сонцем унизу */
+[data-theme="pink"] .theme-swatch {
+  background:
+    radial-gradient(circle at 68% 78%, #ED9E59 0 20%, rgba(237, 158, 89, 0.35) 30%, rgba(237, 158, 89, 0) 46%),
+    linear-gradient(165deg, #1B1931 0%, #44174E 100%);
+}
+
+/* Кнопки */
+
+.btn {
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+  padding: 0.7rem 1.5rem;
+}
+
+.btn-primary {
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible,
+.btn-primary:active {
+  color: var(--color-on-primary) !important;
+  background: var(--color-primary-hover) !important;
+  border-color: var(--color-primary-hover) !important;
+}
+
+.btn-ghost {
+  color: var(--ghost-text);
+  background: transparent;
+  border: 2px solid var(--ghost-border);
+}
+
+.btn-ghost:hover {
+  color: var(--ghost-hover-text);
+  background: var(--ghost-hover-bg);
+  border-color: var(--ghost-hover-bg);
+}
+
+/* Картки */
+
+.card-soft {
+  position: relative;
+  height: 100%;
+  padding: 1.75rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+}
+
+.card-soft h3 {
+  font-size: 1.1rem;
+  margin: 1rem 0 0.5rem;
+}
+
+.card-soft p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.step-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  font-family: var(--font-heading);
+  font-weight: 600;
+  border-radius: var(--radius-pill);
+}
+
+.step-1 { background: var(--step-1-bg); color: var(--step-1-text); }
+.step-2 { background: var(--step-2-bg); color: var(--step-2-text); }
+.step-3 { background: var(--step-3-bg); color: var(--step-3-text); }
+
+/* Головна: перший екран */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  color: var(--hero-text);
+  background: var(--hero-bg);
+}
+
+.hero-inner {
+  position: relative;
+  z-index: 1;
+  padding-block: 4rem;
+}
+
+.hero h1 {
+  color: var(--hero-title);
+  text-shadow: var(--hero-title-shadow);
+  font-size: clamp(1.9rem, 5vw, 3.1rem);
+  line-height: 1.15;
+  margin-bottom: 1.25rem;
+}
+
+.hero-lead {
+  max-width: 34rem;
+  font-size: 1.125rem;
+  color: var(--hero-lead);
+  margin-bottom: 2rem;
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+/* Декоративний стос «пігулок» у кольорах палітри */
+.pill-stack {
+  display: flex;
+  flex-direction: column;
+  max-width: 22rem;
+  margin-inline: auto;
+}
+
+.pill {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 4.25rem;
+  margin-top: -1.25rem;
+  padding: 0 1.75rem;
+  font-weight: 600;
+  border: 1px solid var(--pill-border);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 0.5rem 1.25rem rgba(27, 25, 49, 0.25);
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.pill:first-child { margin-top: 0; }
+.pill-1 { background: var(--pill-1-bg); color: var(--pill-1-text); }
+.pill-2 { background: var(--pill-2-bg); color: var(--pill-2-text); }
+.pill-3 { background: var(--pill-3-bg); color: var(--pill-3-text); }
+.pill-4 { background: var(--pill-4-bg); color: var(--pill-4-text); }
+.pill-5 { background: var(--pill-5-bg); color: var(--pill-5-text); }
+.pill-6 { background: var(--pill-6-bg); color: var(--pill-6-text); }
+
+/* Блискітки: шар заповнює site.js, за атрибутом data-sparkles на секції */
+
+.sparkles {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sparkle {
+  position: absolute;
+  width: var(--size, 12px);
+  height: var(--size, 12px);
+  background: var(--sparkle-color);
+  clip-path: polygon(50% 0%, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0% 50%, 39% 39%);
+  filter: drop-shadow(0 0 6px var(--sparkle-glow)) drop-shadow(0 0 2px var(--sparkle-glow));
+  opacity: 0;
+  animation: twinkle var(--duration, 3s) ease-in-out var(--delay, 0s) infinite;
+}
+
+/* Кожна третя блискітка акцентного кольору, щоб їх було видно й на світлому тлі */
+.sparkle:nth-child(3n) {
+  background: var(--sparkle-alt-color);
+}
+
+.sparkles-soft .sparkle {
+  background: var(--sparkle-soft-color);
+  filter: none;
+}
+
+@keyframes twinkle {
+  0%, 100% { opacity: 0; transform: scale(0.3) rotate(0deg); }
+  50% { opacity: 1; transform: scale(1) rotate(45deg); }
+}
+
+.sparkles-soft .sparkle {
+  animation-name: twinkle-soft;
+}
+
+@keyframes twinkle-soft {
+  0%, 100% { opacity: 0; transform: scale(0.3) rotate(0deg); }
+  50% { opacity: 0.45; transform: scale(1) rotate(45deg); }
+}
+
+/* Хто вимкнув анімації в системі, бачить статичні блискітки */
+@media (prefers-reduced-motion: reduce) {
+  .sparkle {
+    animation: none;
+    opacity: 0.7;
+  }
+
+  .sparkles-soft .sparkle {
+    opacity: 0.3;
+  }
+}
+
+/* Секції */
+
+.section {
+  position: relative;
+  padding-block: 4rem;
+}
+
+.section > .container {
+  position: relative;
+  z-index: 1;
+}
+
+.section-title {
+  font-size: clamp(1.4rem, 3.5vw, 2rem);
+  margin-bottom: 0.5rem;
+}
+
+.section-lead {
+  color: var(--color-text-muted);
+  margin-bottom: 2.5rem;
+}
+
+/* Сторінка-заглушка */
+
+.placeholder-card {
+  max-width: 36rem;
+  margin: 4rem auto;
+  text-align: center;
+}
+
+/* Сторінка 404 та інших кодів */
+
+.card-soft .status-code {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-heading);
+  font-size: clamp(4rem, 14vw, 6.5rem);
+  font-weight: 600;
+  line-height: 1;
+  background: var(--header-bg);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.btn-outline-theme {
+  color: var(--color-link);
+  background: transparent;
+  border: 2px solid var(--color-link);
+}
+
+.btn-outline-theme:hover {
+  color: var(--color-on-primary);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+/* Футер */
+
+.site-footer {
+  padding-block: 1.5rem;
+  color: var(--footer-text);
+  background: var(--footer-bg);
+  font-size: 0.9rem;
+}
+
+.site-footer a {
+  color: var(--footer-text);
+}
+
+/* Телефон */
+
+@media (max-width: 575.98px) {
+  .hero-inner {
+    padding-block: 2.75rem;
+  }
+
+  .hero-actions .btn {
+    width: 100%;
+  }
+
+  .section {
+    padding-block: 2.75rem;
+  }
+
+  .pill {
+    height: 3.5rem;
+    margin-top: -1rem;
+    padding-inline: 1.25rem;
+    font-size: 0.9rem;
+  }
 }
