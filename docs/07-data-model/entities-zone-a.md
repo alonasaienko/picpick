@@ -58,7 +58,7 @@ Cookie входу зберігається в браузері, а не в `iden
 | `name` | `varchar(100)` | NOT NULL, 1–100 символів після Trim | Назва галереї (FR-103) |
 | `status` | `text` | NOT NULL, default `Draft`, CHECK: `Draft`, `Processing`, `Ready`, `Shared`, `Finalized`, `Expired` | Стан за глосарієм |
 | `created_at` | `timestamptz` | NOT NULL, default `now()` | Створення в UTC, задається сервером |
-| `expires_at` | `timestamptz` | NOT NULL, `created_at < expires_at <= created_at + interval '720 hours'` | Термін дії, після якого доступ закрито (FR-108) |
+| `expires_at` | `timestamptz` | NOT NULL, CHECK `expires_at > created_at AND expires_at <= created_at + interval '720 hours'` | Термін дії, після якого доступ закрито (FR-108) |
 | `version` | `integer` | NOT NULL, default 0, CHECK `version >= 0`, concurrency token EF Core | Версія для оптимістичного блокування CS-101 |
 | `deletion_requested_at` | `timestamptz` | NULL | Запит ручного видалення; новий статус Gallery не вводиться |
 
