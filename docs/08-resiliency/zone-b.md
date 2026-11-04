@@ -41,7 +41,7 @@ FR-205 вимагає не більше 3 спроб і паузи щонайм�
   AND photos.deleted_at IS NULL
   AND EXISTS (SELECT 1 FROM galleries g
               WHERE g.id = photos.gallery_id
-                AND g.deleted_at IS NULL      -- позначка видалення галереї (зона A)
+                AND g.deletion_requested_at IS NULL  -- ручне видалення галереї (зона A)
                 AND g.expires_at > now())     -- термін дії не настав (FR-108)
   ```
 
