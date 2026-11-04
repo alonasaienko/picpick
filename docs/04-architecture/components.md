@@ -5,8 +5,8 @@
 | Компонент | Роль | Технологія |
 |---|---|---|
 | Браузер | Інтерфейс фотографа й клієнта | Razor Pages + vanilla JavaScript |
-| Web App | Сторінки, REST API, вхід, перевірка доступу, фонові задачі | ASP.NET Core 8 |
-| Worker | Створення прев'ю з вотермаркою | Python 3.12 |
+| Web App | Сторінки, REST API, вхід, перевірка доступу, фонові задачі, внутрішній API для Worker | ASP.NET Core 8 |
+| Worker | Створення прев'ю з вотермаркою; право на спробу отримує у внутрішньому API Web App | Python 3.12 |
 | RabbitMQ | Черга задач (Web App → Worker) і Черга подій (Worker → Web App) | RabbitMQ 3, AMQP |
 | PostgreSQL | Основна база даних, пише лише Web App | PostgreSQL 16 |
 | MinIO | Оригінали й прев'ю | S3-сумісне сховище |
