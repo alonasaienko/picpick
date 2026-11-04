@@ -46,7 +46,7 @@ sequenceDiagram
             WebApp-->>Worker: 409, без токена
             Worker--)Tasks: ack задачі без обробки
         else Право видано
-            WebApp-->>Worker: 200 OK, токен lease
+            WebApp-->>Worker: 200 OK: токен lease і ключ оригіналу з рядка Photo
         Worker->>MinIO: GET оригіналу
         MinIO-->>Worker: Оригінал
         Worker->>Worker: Декодувати, зменшити до 1600 px,<br/>накласти вотермарку, прибрати EXIF
