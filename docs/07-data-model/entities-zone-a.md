@@ -68,7 +68,7 @@ Web App обрізає крайні пробіли, а CHECK для `nickname` �
 
 **Індекси:** `(photographer_id, created_at DESC, id)` — список власних галерей (FR-104); `(expires_at)` — пошук прострочених для очищення; частковий `(deletion_requested_at) WHERE deletion_requested_at IS NOT NULL` — черга ручного видалення. Окремий індекс `version` не потрібний: умовне оновлення шукає Gallery за PK.
 
-**Лічильники:** `photoCount` та кількість `Ready`/`Failed`/незавершених фото рахуються запитом до Photo. Це не дублює стан і відповідає CS-101; ціна — додатковий COUNT на читання та обробку події. Збережені лічильники прискорили б читання, але вимагали б атомарного оновлення при кожному завантаженні, видаленні та повторі. Поки їх не вводимо; для підрахунків зона B передбачає індекс `(gallery_id, status)` ([модель зони B, ПР #118](https://github.com/alonasaienko/picpick/pull/118)).
+**Лічильники:** `photoCount` та кількість `Ready`/`Failed`/незавершених фото рахуються запитом до Photo. Це не дублює стан і відповідає CS-101; ціна — додатковий COUNT на читання та обробку події. Збережені лічильники прискорили б читання, але вимагали б атомарного оновлення при кожному завантаженні, видаленні та повторі. Поки їх не вводимо; для підрахунків зона B передбачає індекс `(gallery_id, status)` ([модель зони B](entities-zone-b.md)).
 
 **Версія:** збільшується в тій самій транзакції при зміні набору чи стану фото, статусу або позначки видалення Gallery, навіть коли статус лишається `Processing`. Оновлення перевіряє стару версію; конфлікт відкочує всю транзакцію, включно зі зміною Photo, і повторює її за [CS-101](../06-concurrency/cs-101-gallery-status.md).
 
@@ -80,7 +80,7 @@ Web App обрізає крайні пробіли, а CHECK для `nickname` �
 
 ## 4. ER-фрагмент зони A
 
-Сутності B/C показано лише назвами. Службові таблиці Identity не є сутностями продукту.
+Сутності B/C показано лише назвами. Для Photographer наведено основні поля акаунта; повний набір полів Identity залишається в таблиці опису вище. Службові таблиці Identity не є сутностями продукту.
 
 ```mermaid
 erDiagram
@@ -96,17 +96,7 @@ erDiagram
         varchar email
         varchar normalized_email UK
         boolean email_confirmed
-        varchar user_name
-        varchar normalized_user_name UK
         text password_hash
-        text security_stamp
-        text concurrency_stamp
-        text phone_number
-        boolean phone_number_confirmed
-        boolean two_factor_enabled
-        timestamptz lockout_end
-        boolean lockout_enabled
-        integer access_failed_count
         timestamptz created_at
         timestamptz deletion_requested_at
     }
