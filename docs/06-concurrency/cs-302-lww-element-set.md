@@ -36,6 +36,7 @@ sequenceDiagram
     par Телефон
         Phone->>API: PUT like фото 1, liked = true
         API->>DB: BEGIN, SELECT Selection FOR UPDATE
+        API->>DB: під блокуванням: Status = Open, фото Ready і не видалене
         API->>DB: INSERT like_change(фото 1, liked = true), op_seq = nextval
         API->>DB: INSERT або UPDATE likes(фото 1), COMMIT
         DB-->>API: op_seq = 11
@@ -43,6 +44,7 @@ sequenceDiagram
     and Ноутбук
         Laptop->>API: PUT like фото 3, liked = true
         API->>DB: BEGIN, SELECT Selection FOR UPDATE
+        API->>DB: під блокуванням: Status = Open, фото Ready і не видалене
         API->>DB: INSERT like_change(фото 3, liked = true), op_seq = nextval
         API->>DB: INSERT або UPDATE likes(фото 3), COMMIT
         DB-->>API: op_seq = 12
@@ -55,6 +57,7 @@ sequenceDiagram
     alt Обидва пристрої змінюють те саме фото 3
         Phone->>API: DELETE like фото 3
         API->>DB: BEGIN, SELECT Selection FOR UPDATE
+        API->>DB: під блокуванням: Status = Open, фото Ready і не видалене
         API->>DB: INSERT like_change(фото 3, liked = false), op_seq = nextval
         API->>DB: DELETE likes(фото 3), COMMIT
         Laptop->>API: PUT like фото 3, liked = true
@@ -77,7 +80,7 @@ sequenceDiagram
 - **Дані:** поточна таблиця `likes` має первинний ключ `(selection_id, photo_id)` і містить лише активні лайки. Для кожної зміни окремо append-only записується журнал `like_changes` з полями `selection_id`, `photo_id`, `liked`, `op_seq` і `created_at`. Запис `liked = false` у журналі зберігає факт зняття лайка після `DELETE` з `likes`, тому синхронізація не втрачає цю операцію.
 - **API:** пристрій надсилає операцію над одним фото, а не весь список: `PUT /api/share-links/{token}/likes/{photoId}` для встановлення лайка і `DELETE /api/share-links/{token}/likes/{photoId}` для його зняття. Операція задає стан явно через метод HTTP, а не перемикає його, тому повтор безпечний.
 - **Перший лайк:** `Selection` створюється першим лайком (FR-304 п.1), тому два пристрої можуть створювати його одночасно. На `Selection(gallery_id)` стоїть унікальне обмеження, а створення виконується як `INSERT … ON CONFLICT (gallery_id) DO NOTHING` з наступним читанням, тож обидва пристрої працюють з одним `Selection`.
-- **Запис:** в одній транзакції Web App перевіряє `ShareLink`, `Gallery`, `Selection.Status` і `Photo.Status`, а потім блокує рядок `Selection` через `SELECT ... FOR UPDATE`. Після отримання блокування він призначає `op_seq` через `nextval('like_op_seq')`, записує зміну в `like_changes` і оновлює поточну проекцію `likes`: `PUT` створює або оновлює рядок, `DELETE` видаляє його. Зміна журналу й проекції комітяться атомарно; зняття відсутнього лайка завершується успішно без зміни проекції.
+- **Запис:** в одній транзакції Web App перевіряє `ShareLink` і `Gallery`, блокує рядок `Selection` через `SELECT ... FOR UPDATE` і **вже під блокуванням** перевіряє `Selection.Status = Open` та фото: належність до галереї, `Photo.Status = Ready` і `deleted_at IS NULL`. Статус, прочитаний до блокування, міг би застаріти: якщо відправка вибору завершиться, поки запит лайка чекає блокування, лайк потрапив би у вже відправлений вибір ([модель зони C](../07-data-model/entities-zone-c.md#like)). Після перевірок Web App призначає `op_seq` через `nextval('like_op_seq')`, записує зміну в `like_changes` і оновлює поточну проекцію `likes`: `PUT` створює або оновлює рядок, `DELETE` видаляє його. Зміна журналу й проекції комітяться атомарно; зняття відсутнього лайка завершується успішно без зміни проекції.
 - **Синхронізація:** пристрій періодично (і після кожної власної дії) викликає `GET /api/share-links/{token}/likes?since={останній op_seq}` і отримує лише закомічені записи `like_changes` після курсора. Оскільки всі зміни одного `Selection` серіалізовані й комітяться в тому самому порядку, `op_seq` не може бути пропущений через пізніший commit. Клієнт зливає записи по фото; `liked = false` видаляє фото з локальної множини. Повторне отримання тих самих змін нічого не ламає.
 - **Гарантія та механізм:** зміни різних фото не втрачаються; зміни одного фото застосовуються в послідовному порядку. Журнал `like_changes` і проекція `likes` змінюються в одній транзакції під блокуванням `Selection`, тому вони не розходяться. Унікальний ключ `(selection_id, photo_id)` не допускає дубліката активного лайка.
 - **Межі сценарію:** що буде з лайками, коли фотограф закриває галерею, ця історія не розглядає. Запис лайка після відправки, фіналізації чи відкликання посилання відхиляє Web App за FR-304 п.3.
