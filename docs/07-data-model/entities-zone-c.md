@@ -110,7 +110,13 @@
 
 **Створення:** `Selection` з'являється з першим лайком. Два пристрої можуть лайкнути одночасно, тому створення виконується як `INSERT … ON CONFLICT (gallery_id) DO NOTHING` з наступним читанням, і обидва працюють з одним рядком ([CS-302](../06-concurrency/cs-302-lww-element-set.md)).
 
-**Відправка:** `UPDATE selections SET status = 'Submitted', submitted_at = now() WHERE id = :id AND status = 'Open'` в одній транзакції з ключем ідемпотентності ([CS-301](../06-concurrency/cs-301-idempotency-key.md)). Перед оновленням Web App перевіряє, що в `likes` є щонайменше один рядок (FR-305 п.1). Лайк блокує той самий рядок `selections` (`FOR UPDATE`), тож лайк і відправка не перемежовуються: до вибору входять саме ті лайки, що закомічені до відправки.
+**Відправка** — одна транзакція разом із ключем ідемпотентності ([CS-301](../06-concurrency/cs-301-idempotency-key.md)):
+1. `INSERT` ключа в `idempotency_keys … ON CONFLICT DO NOTHING`; якщо ключ уже є, повертається збережена відповідь;
+2. `SELECT … FROM selections WHERE id = :id FOR UPDATE` — блокування рядка вибору;
+3. **уже під блокуванням** — перевірка `status = 'Open'` і того, що в `likes` є щонайменше один рядок (FR-305 п.1);
+4. `UPDATE selections SET status = 'Submitted', submitted_at = now() WHERE id = :id AND status = 'Open'` і запис відповіді в ключ.
+
+Порядок важливий. Якби перевірка лайків ішла до блокування, інший пристрій міг би зняти останній лайк між перевіркою й `UPDATE`, і порожній вибір було б відправлено всупереч FR-305. Зміна лайка бере те саме блокування першою дією над вибором, тож лайк і відправка не перемежовуються: до вибору входять саме ті лайки, що закомічені до відправки. Ключ береться раніше за блокування вибору в кожній відправці, а лайк ключа не бере взагалі, тому взаємного блокування (deadlock) не виникає.
 
 **Зв'язки:** Gallery 1 → 0..1 Selection; Selection 1 → 0..N Like; Selection 1 → 0..N LikeChange; Selection 1 → 0..N IdempotencyKey.
 
@@ -125,11 +131,11 @@
 | Поле | Тип (PostgreSQL) | Обмеження | Опис |
 |---|---|---|---|
 | `selection_id` | `uuid` | PK (разом із `photo_id`), FK → Selection, NOT NULL, `ON DELETE CASCADE` | Вибір, до якого належить лайк |
-| `photo_id` | `uuid` | PK (разом із `selection_id`), FK → Photo, NOT NULL, `ON DELETE CASCADE` | Обране фото. Web App у тій самій транзакції перевіряє, що фото належить галереї цього вибору й має статус `Ready` (FR-304 п.2, NFR-301 п.6) |
+| `photo_id` | `uuid` | PK (разом із `selection_id`), FK → Photo, NOT NULL, `ON DELETE CASCADE` | Обране фото. Web App у тій самій транзакції перевіряє, що фото належить галереї цього вибору, має статус `Ready` і не позначене видаленим (`photos.deleted_at IS NULL`): за [моделлю зони B](entities-zone-b.md) видалене фото лишається рядком зі старим статусом до фізичного очищення (FR-304 п.2, FR-207, NFR-301 п.6) |
 | `op_seq` | `bigint` | NOT NULL | Номер зміни, що поставила лайк ([розділ 1](#де-живе-op_seq-і-що-він-гарантує)) |
 | `liked_at` | `timestamptz` | NOT NULL, default `now()` | Момент, коли лайк поставлено |
 
-`PUT` створює рядок або оновлює `op_seq` наявного (`INSERT … ON CONFLICT (selection_id, photo_id) DO UPDATE`), `DELETE` видаляє рядок; обидва в одній транзакції із записом у `like_changes`.
+Зміна лайка — одна транзакція: перевірка посилання й галереї, `SELECT … FROM selections WHERE id = :id FOR UPDATE`, і **вже під блокуванням** — перевірка `Selection.Status = 'Open'` (FR-304 п.3) і фото. Лише після цього Web App бере `op_seq`, а `PUT` створює рядок або оновлює `op_seq` наявного (`INSERT … ON CONFLICT (selection_id, photo_id) DO UPDATE`), `DELETE` видаляє рядок; обидва разом із записом у `like_changes`. Статус, прочитаний до блокування, міг би застаріти: відправка, що закомітилася між читанням і записом, пропустила б лайк у вже відправлений вибір.
 
 **Зв'язки:** Selection 1 → 0..N Like; Photo 1 → 0..N Like (на практиці 0..1, бо в галереї один вибір).
 
