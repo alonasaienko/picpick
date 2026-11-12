@@ -54,6 +54,7 @@ sequenceDiagram
     alt Перший запит завершився успішно
         API->>DB: SELECT збережену відповідь за ключем K
         DB-->>API: 200 і початковий submittedAt
+        API->>DB: COMMIT, блокування Selection звільнено
         API-->>B2: 200 OK, Idempotent-Replayed: true
     else Перша транзакція відкотилася
         Note over API,B2: Ключ звільнено, другий запит виконується як перший
@@ -61,6 +62,7 @@ sequenceDiagram
     B1->>API: запізнілий повтор (токен, ключ K)
     API->>DB: BEGIN, SELECT Selection FOR UPDATE,<br/>SELECT збережену відповідь за ключем K
     DB-->>API: 200 і початковий submittedAt
+    API->>DB: COMMIT, блокування Selection звільнено
     API-->>B1: 200 OK, Idempotent-Replayed: true
     alt Запит з іншим ключем L (інший пристрій або вкладка без спільного ключа)
         B2->>API: відправити вибір (токен, ключ L)
