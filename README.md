@@ -15,7 +15,7 @@ Team project for the **Object-Oriented Analysis and Design** course.
 | Message broker | RabbitMQ |
 | Database | PostgreSQL |
 | File storage | MinIO (S3-compatible) |
-| Local run | Podman Compose; the same Compose file works with Docker *(coming soon)* |
+| Local run | Podman or Docker Compose (`compose.yaml`: PostgreSQL, RabbitMQ, MinIO) |
 
 ## Repository structure
 
