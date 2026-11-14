@@ -195,7 +195,7 @@ FR-205 вимагає не більше 3 спроб із паузами щон�
 erDiagram
     Gallery ||--o{ Photo : "містить"
     Photo ||--o| PhotoPreview : "має прев'ю"
-    Photo ||..o{ outbox_messages : "задача (payload.photoId)"
+    Photo |o..o{ outbox_messages : "задача (payload.photoId)"
     Photo ||--o{ likes : "лайки (зона C)"
 
     Photo {
