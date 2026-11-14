@@ -15,7 +15,7 @@ Team project for the **Object-Oriented Analysis and Design** course.
 | Message broker | RabbitMQ |
 | Database | PostgreSQL |
 | File storage | MinIO (S3-compatible) |
-| Local run | Docker Compose *(coming soon)* |
+| Local run | Podman Compose; the same Compose file works with Docker *(coming soon)* |
 
 ## Repository structure
 
@@ -23,6 +23,7 @@ Team project for the **Object-Oriented Analysis and Design** course.
 docs/          project documentation, one folder per course task
 src/webapp/    ASP.NET Core app: UI, REST API
 src/worker/    Python worker: watermarks and previews
+tests/         Web App error-handling checks and Worker tests
 ```
 
 ## Getting started
@@ -49,6 +50,19 @@ python3 -m venv src/worker/.venv
 source src/worker/.venv/bin/activate
 pip install -r src/worker/requirements.txt
 python src/worker/main.py
+```
+
+Create a watermarked preview from any photo (FR-203):
+
+```bash
+python src/worker/preview.py photo.jpg preview.jpg
+```
+
+Run the Worker tests:
+
+```bash
+pip install -r src/worker/requirements-dev.txt
+pytest tests/worker
 ```
 
 ## Design

@@ -140,7 +140,7 @@ Prefer buttons? Everything above also works in **GitHub Desktop** or the **Sourc
 
 1. **No direct pushes to `main`.** Only through pull requests.
 2. **Edit only your own files.** Shared files (`docs/glossary.md`, `docs/06-concurrency/patterns.md`) are changed in a separate small PR and merged quickly.
-3. **Names come from the [glossary](docs/glossary.md).** Need a new term? Add it there first.
+3. **Names come from the [glossary](../docs/glossary.md).** Need a new term? Add it there first.
 4. **Use your number range:** zone A uses `1xx`, zone B `2xx`, zone C `3xx` (FR, NFR, endpoints, scenarios).
 5. **No secrets in the repo.** Real values go to `.env` (ignored); commit only `.env.example`.
 6. **No large files.** Keep test photos local; commit only a few small samples if needed.
