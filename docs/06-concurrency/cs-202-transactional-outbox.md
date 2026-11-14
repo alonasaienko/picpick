@@ -83,6 +83,6 @@ sequenceDiagram
 
 ## Перевірка результату (для захисту)
 
-- **Як відтворити:** зупинити RabbitMQ (`docker stop rabbitmq`) і завантажити пакет із 50 фото. Потім запустити RabbitMQ знову. Окремо: примусово зупинити Web App (`docker kill`) під час роботи relay і запустити знову.
+- **Як відтворити:** зупинити RabbitMQ (`podman-compose stop rabbitmq`) і завантажити пакет із 50 фото. Потім запустити RabbitMQ знову. Окремо: примусово зупинити Web App (`podman kill`) під час роботи relay і запустити знову.
 - **Очікуваний кінцевий стан:** поки RabbitMQ зупинений, завантаження успішне (200), фото мають статус `Uploaded`, а в `outbox_messages` 50 записів із `sent_at = NULL`. Після запуску RabbitMQ протягом кількох секунд усі записи отримують `sent_at`, задачі з'являються в Черзі задач, і всі 50 фото переходять у `Ready` або `Failed`. Після перезапуску Web App жодне фото не лишається в `Uploaded` без задачі.
 - **Як перевірити, що проблему усунуто:** `SELECT count(*) FROM outbox_messages WHERE sent_at IS NULL` повертає 0 після відновлення; `SELECT count(*) FROM outbox_messages WHERE sent_at < available_at` повертає 0, тобто жоден відкладений повтор не опубліковано раніше за паузу; кожен `Photo` має відповідний запис в outbox; у RabbitMQ Management UI видно, що повідомлення з'явилися в Черзі задач після запуску брокера; у PostgreSQL рівно один `PhotoPreview` на кожне фото зі статусом `Ready`.
