@@ -15,7 +15,7 @@ Team project for the **Object-Oriented Analysis and Design** course.
 | Message broker | RabbitMQ |
 | Database | PostgreSQL |
 | File storage | MinIO (S3-compatible) |
-| Local run | Docker Compose *(coming soon)* |
+| Local run | Podman or Docker Compose (`compose.yaml`: PostgreSQL, RabbitMQ, MinIO) |
 
 ## Repository structure
 
@@ -26,6 +26,70 @@ src/worker/    Python worker: watermarks and previews
 ```
 
 ## Getting started
+
+### Infrastructure (PostgreSQL, RabbitMQ, MinIO)
+
+`compose.yaml` starts the three infrastructure services from the [High-level Architecture](docs/03-srs/high-level-architecture.md). The Web App and the Worker still run locally (see below) and connect to them via `localhost`. The same file works with Podman and Docker.
+
+1. Install Podman (Ubuntu 24.04) or use Docker:
+
+   ```bash
+   sudo apt install podman podman-compose
+   ```
+
+2. Create `.env` from the example and change the passwords. `.env` is in `.gitignore` and must never be committed:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   If a port is already taken on your machine (for example, by a local PostgreSQL on 5432), change it in `.env`, e.g. `POSTGRES_PORT=5433`.
+
+3. Start everything:
+
+   ```bash
+   podman-compose up -d
+   ```
+
+   or with Docker:
+
+   ```bash
+   docker compose up -d
+   ```
+
+4. Check that all services are `healthy`:
+
+   ```bash
+   podman ps -a
+   ```
+
+   (with Docker: `docker compose ps -a`). `podman-compose` may exit with code 0 even if a container failed to start, so always check this list. The one-off `minio-init` container creates the `originals` and `previews` buckets and then shows `Exited (0)`; this is expected.
+
+| Service | Address | Login |
+|---|---|---|
+| PostgreSQL | `localhost:5432`, database `picpick` | `POSTGRES_USER` / `POSTGRES_PASSWORD` from `.env` |
+| RabbitMQ (AMQP) | `localhost:5672` | `RABBITMQ_USER` / `RABBITMQ_PASSWORD` |
+| RabbitMQ Management UI | http://localhost:15672 | same as RabbitMQ |
+| MinIO S3 API | http://localhost:9000 | `MINIO_ROOT_USER` / `MINIO_ROOT_PASSWORD` |
+| MinIO Console | http://localhost:9001 | same as MinIO |
+
+All ports are bound to `127.0.0.1` only, so the services are not reachable from other machines. In the target system they live in a private network, and only the Web App is public (see the [security model](docs/09-security/README.md)).
+
+**About the MinIO image.** Official MinIO images are no longer freely published (`quay.io/minio` requires authorisation, `minio/minio` was removed from Docker Hub). The prototype uses the frozen `bitnamilegacy/minio` image, pinned to the last version that still has the web console. It gets no updates, which is acceptable for a local prototype bound to `localhost`, but not for production.
+
+Stop the services, keeping the data:
+
+```bash
+podman-compose down
+```
+
+Stop and delete all data (database, queues, files):
+
+```bash
+podman-compose down -v
+```
+
+With Docker, use `docker compose down` and `docker compose down -v`.
 
 ### Web App
 
