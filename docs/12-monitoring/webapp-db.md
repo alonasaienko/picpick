@@ -51,7 +51,7 @@ TM-104 і TM-105 обчислюються з counter, окремі лічиль�
 2. Усунути встановлену причину. Для регресії після розгортання відкотити зміну. Для збою залежності відновити її за RMA. Результат запису, перерваного з'єднанням, перевірити перед повторним надсиланням.
 3. Якщо протягом 10 хв після спрацювання частка не знизилася або є підозра на втрату даних, залучити іншого відповідального за застосунок/БД. Перевірити роботу проблемного сценарію та падіння частки 5xx нижче порога.
 
-Alertmanager групує повідомлення за середовищем та алертом, додає копію сервісу й посилання на дашборд. Сповіщення йде команді обслуговування через узгоджений командний канал. Під час підтвердженого збою БД повторні AL-102 з тієї самої причини можна приглушити, зберігаючи їх на дашборді.
+Alertmanager групує повідомлення за середовищем та алертом, додає копію сервісу й посилання на дашборд. Critical надходять у командний чат і на email чергового, Warning — лише в чат ([куди надходять алерти](README.md#куди-надходять-алерти)). Поки діє AL-101 для Web App чи PostgreSQL, AL-102 і AL-103 приглушуються автоматично (inhibition), бо помилки й затримки тоді — наслідок недоступності; приглушені алерти лишаються на дашборді.
 
 ## Зв'язок із вимогами та перевірка
 
@@ -63,4 +63,4 @@ Alertmanager групує повідомлення за середовищем �
 
 Пороги 5%, 10%, 80%, вікна й строки ескалації — запропоновані стартові значення. Їх потрібно уточнити після навантажувального тесту та перших спостережень.
 
-Джерела — [метрики ASP.NET Core у .NET 8](https://devblogs.microsoft.com/dotnet/introducing-aspnetcore-metrics-and-grafana-dashboards-in-dotnet-8/), [гістограми Prometheus](https://prometheus.io/docs/practices/histograms/), [postgres_exporter](https://github.com/prometheus-community/postgres_exporter), [статистика PostgreSQL](https://www.postgresql.org/docs/15/monitoring-stats.html).
+Джерела — [метрики ASP.NET Core у .NET 8](https://devblogs.microsoft.com/dotnet/introducing-aspnetcore-metrics-and-grafana-dashboards-in-dotnet-8/), [гістограми Prometheus](https://prometheus.io/docs/practices/histograms/), [postgres_exporter](https://github.com/prometheus-community/postgres_exporter), [статистика PostgreSQL](https://www.postgresql.org/docs/16/monitoring-stats.html).
