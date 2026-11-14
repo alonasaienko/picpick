@@ -86,7 +86,13 @@
 1. `SELECT … FROM galleries WHERE id = :galleryId FOR UPDATE` — блокування рядка галереї; два одночасні створення для однієї галереї виконуються по черзі;
 2. перевірка власника, стану галереї (`Ready` чи `Shared`) і `expires_at` нового посилання;
 3. `UPDATE share_links SET revoked_at = now() WHERE gallery_id = :galleryId AND revoked_at IS NULL AND expires_at > now()` — попереднє `Active` стає `Revoked`;
-4. `INSERT` нового посилання й перехід галереї з `Ready` у `Shared` за правилами [CS-101](../06-concurrency/cs-101-gallery-status.md).
+4. `INSERT` нового посилання; якщо галерея ще `Ready`, у тій самій транзакції — умовне оновлення в `Shared` зі збільшенням `Gallery.version` ([CS-101, переходи без результатів обробки](../06-concurrency/cs-101-gallery-status.md#як-застосовано-в-нашій-системі)). Для галереї вже в `Shared` статус і версія не змінюються.
+
+**Статус галереї після посилання.** Відкликання чи завершення терміну самого `ShareLink` зберігає поточний статус галереї й не повертає її в `Ready`:
+- **`Shared` лишається `Shared`.** Фотограф і далі бачить вибір клієнта (FR-306) і, поки `ExpiresAt` галереї не настав, може створити нове посилання на заміну (FR-301 п.1); `Selection` продовжується з ним.
+- **`Finalized` лишається `Finalized`.** Чинне посилання можна відкликати й після фіналізації (FR-302): доступ клієнта закривається, вибір фотограф і далі бачить (FR-306), але нове посилання створити не можна (FR-301 п.4).
+
+Коли настає `ExpiresAt` самої галереї, діє окремий перехід у `Expired` за FR-108: недійсними стають усі її посилання.
 
 **Зв'язки:** Gallery 1 → 0..N ShareLink. Selection з посиланням не пов'язаний: він належить галереї й переживає заміну посилання (FR-301 п.3).
 
@@ -195,16 +201,16 @@
 
 ## 3. ER-фрагмент зони C
 
-Сутності інших зон показано лише назвами: Gallery — [зона A](entities-zone-a.md), Photo — [зона B](entities-zone-b.md).
+Сутності інших зон показано лише назвами: Gallery — [зона A](entities-zone-a.md), Photo — [зона B](entities-zone-b.md). Як і в [зведеній діаграмі](README.md#er-діаграма), суцільна лінія означає, що зовнішній ключ входить до первинного ключа, а пунктир — звичайний зовнішній ключ.
 
 ```mermaid
 erDiagram
-    Gallery ||--o{ ShareLink : "має історію посилань"
-    Gallery ||--o| Selection : "має вибір"
+    Gallery ||..o{ ShareLink : "має історію посилань"
+    Gallery ||..o| Selection : "має вибір"
     Selection ||--o{ Like : "містить"
     Photo ||--o{ Like : "обране в"
-    Selection ||--o{ LikeChange : "журнал змін"
-    Photo ||--o{ LikeChange : "стосується"
+    Selection ||..o{ LikeChange : "журнал змін"
+    Photo ||..o{ LikeChange : "стосується"
     Selection ||--o{ IdempotencyKey : "ключі відправки"
 
     ShareLink {

@@ -80,15 +80,15 @@ Web App обрізає крайні пробіли, а CHECK для `nickname` �
 
 ## 4. ER-фрагмент зони A
 
-Сутності B/C показано лише назвами. Для Photographer наведено основні поля акаунта; повний набір полів Identity залишається в таблиці опису вище. Службові таблиці Identity не є сутностями продукту.
+Сутності B/C показано лише назвами. Для Photographer наведено основні поля акаунта; повний набір полів Identity залишається в таблиці опису вище. Службові таблиці Identity не є сутностями продукту. Як і в [зведеній діаграмі](README.md#er-діаграма), суцільна лінія означає, що зовнішній ключ входить до первинного ключа, а пунктир — звичайний зовнішній ключ.
 
 ```mermaid
 erDiagram
-    Photographer ||--o{ Gallery : "володіє"
-    Gallery ||--o{ Photo : "містить"
-    Photo ||--o| PhotoPreview : "має прев'ю"
-    Gallery ||--o{ ShareLink : "має історію посилань"
-    Gallery ||--o| Selection : "має вибір"
+    Photographer ||..o{ Gallery : "володіє"
+    Gallery ||..o{ Photo : "містить"
+    Photo ||..o| PhotoPreview : "має прев'ю"
+    Gallery ||..o{ ShareLink : "має історію посилань"
+    Gallery ||..o| Selection : "має вибір"
 
     Photographer {
         uuid id PK
