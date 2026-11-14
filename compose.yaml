@@ -1,0 +1,101 @@
+# Локальна інфраструктура PicPick: PostgreSQL, RabbitMQ і MinIO (High-level Architecture, п.3).
+# Web App і Worker поки запускаються локально й підключаються до цих сервісів через localhost.
+# Працює без змін і з `podman-compose up -d`, і з `docker compose up -d`.
+# Паролі беруться з .env (див. .env.example); сам .env у .gitignore.
+
+services:
+  postgres:
+    image: docker.io/library/postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    ports:
+      # Лише localhost: у цільовій системі база в приватній мережі й ззовні недоступна.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  rabbitmq:
+    image: docker.io/library/rabbitmq:3-management
+    # Фіксоване ім'я вузла: RabbitMQ зберігає дані в каталозі, названому за hostname,
+    # і без цього після перестворення контейнера черги з volume не підхопилися б.
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    ports:
+      - "127.0.0.1:${RABBITMQ_PORT:-5672}:5672"
+      # Management UI для демо черг; у цільовій системі закрито (SI-09).
+      - "127.0.0.1:${RABBITMQ_UI_PORT:-15672}:15672"
+    volumes:
+      # Durable-черги переживають перезапуск брокера (NFR-202 п.2).
+      - rabbitmq-data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    restart: unless-stopped
+
+  # Офіційні образи MinIO більше не публікуються вільно (quay.io/minio — unauthorized,
+  # minio/minio на Docker Hub видалено). Тому беремо Bitnami legacy з закріпленою версією:
+  # він має bash для скриптів і health check, але більше не оновлюється. Версія 2025.4.22 —
+  # остання, де ще є вебконсоль на :9001: зі збірок від травня 2025 її прибрано.
+  # Для прототипу з портами лише на localhost це прийнятно; у цільовій системі сховище кероване (п.10).
+  minio:
+    image: docker.io/bitnamilegacy/minio:2025.4.22-debian-12-r2
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_CONSOLE_PORT_NUMBER: "9001"
+    ports:
+      - "127.0.0.1:${MINIO_PORT:-9000}:9000"
+      - "127.0.0.1:${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/bitnami/minio/data
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://127.0.0.1:9000/minio/health/live"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  # Одноразовий контейнер: створює бакети й завершується.
+  # podman-compose з Ubuntu не завжди чекає `service_healthy`, тож скрипт сам повторює
+  # підключення, поки MinIO не відповість. --ignore-existing робить повторний запуск безпечним.
+  minio-init:
+    image: docker.io/bitnamilegacy/minio-client:2025.7.21-debian-12-r3
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      # Контейнер працює не від root, тож налаштування mc кладемо в /tmp.
+      HOME: /tmp
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        until mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" >/dev/null 2>&1; do
+          echo "Чекаю на MinIO..."; sleep 2
+        done
+        # Окремі бакети: оригінали бачить лише власник, а прев'ю віддаються клієнту,
+        # тож права доступу й очищення сиріт для них різні (п.7, п.9).
+        mc mb --ignore-existing local/originals local/previews
+        # Жодного анонімного доступу: файли віддає лише Web App після перевірки прав.
+        mc anonymous set none local/originals
+        mc anonymous set none local/previews
+        echo "Бакети originals і previews готові."
+    restart: "no"
+
+volumes:
+  postgres-data:
+  rabbitmq-data:
+  minio-data:
