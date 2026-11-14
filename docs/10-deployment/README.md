@@ -43,7 +43,7 @@ AWS — еталонний варіант цільового розгортан�
 
 ## Локальний прототип
 
-З кореня репозиторію створити `.env` за `.env.example` і виконати `docker compose up -d` або `podman-compose up -d`. Compose запускає PostgreSQL, RabbitMQ і MinIO на одній машині. Контейнер `minio-init` створює приватні бакети. Web App запускається через `dotnet run --project src/webapp`, Worker — через `python src/worker/main.py` після встановлення його залежностей. Докладні кроки є в [README проєкту](../../README.md).
+З кореня репозиторію створити `.env` за `.env.example` і виконати `podman-compose up -d` (з Docker — `docker compose up -d`). Compose запускає PostgreSQL, RabbitMQ і MinIO на одній машині. Контейнер `minio-init` створює приватні бакети. Web App запускається через `dotnet run --project src/webapp`, Worker — через `python src/worker/main.py` після встановлення його залежностей. Докладні кроки є в [README проєкту](../../README.md).
 
 Інфраструктурні порти прототипу доступні на localhost. Дані лежать у локальних томах, а сервіси мають по одній копії. Цільова схема використовує приватні мережі, реплікацію, резервні копії та автоматичне масштабування.
 
