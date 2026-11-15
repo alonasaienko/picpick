@@ -15,7 +15,20 @@ Team project for the **Object-Oriented Analysis and Design** course.
 | Message broker | RabbitMQ |
 | Database | PostgreSQL |
 | File storage | MinIO (S3-compatible) |
-| Local run | Podman Compose; the same Compose file works with Docker *(coming soon)* |
+| Local run | Podman Compose for the infrastructure (the same file works with Docker); the Web App and the Worker run directly |
+
+## What works now
+
+The prototype implements the parts of the design that can be shown without a full backend. Everything else is designed in [`docs/`](docs/) and marked as planned.
+
+| Area | Works now | Planned |
+|---|---|---|
+| Web App API | 18 operations for galleries, photo upload and client selection, documented in Swagger and [`openapi.json`](docs/05-error-handling/openapi.json); in-memory demo data | Persistence in PostgreSQL, real file storage in MinIO |
+| Errors | One format for every error: RFC 7807 Problem Details with `errorCode` and `traceId`; rate limiting returns 429 with `Retry-After` | — |
+| UI | PicPick layout with two colour themes, responsive pages, friendly 404 | Gallery pages for the photographer, client gallery with likes |
+| Photographer account | — | Sign-up, sign-in and ownership checks with ASP.NET Core Identity |
+| Worker | `make_preview`: JPEG preview with the long side up to 1600 px, diagonal watermark, no EXIF, images over 100 MP rejected before decoding; CLI and tests | Reading tasks from RabbitMQ (Competing Consumers), outbox, lease and retries |
+| Infrastructure | `compose.yaml` with PostgreSQL, RabbitMQ and MinIO: health checks, private buckets, ports on `127.0.0.1` only | Compose services for the Web App and the Worker; target deployment on AWS |
 
 ## Repository structure
 
@@ -129,6 +142,20 @@ pip install -r src/worker/requirements-dev.txt
 pytest tests/worker
 ```
 
+### Web App checks
+
+Error-handling checks start the Web App inside the test process and call its API (requires the .NET 8 SDK):
+
+```bash
+dotnet run --project tests/webapp/ErrorHandlingChecks
+```
+
+The zone A smoke test calls a running Web App (start it first with `dotnet run --project src/webapp`; requires PowerShell):
+
+```bash
+pwsh tests/webapp/zone-a-smoke.ps1
+```
+
 ## Design
 
 The UI has two colour themes. Visitors switch between them with the button in the header; the choice is remembered in the browser.
@@ -155,7 +182,20 @@ The UI has two colour themes. Visitors switch between them with the button in th
 
 ## Documentation
 
-All design documents live in [`docs/`](docs/). Start with the [glossary](docs/glossary.md).
+All design documents live in [`docs/`](docs/), one folder per course task. Names of entities and statuses come from the [glossary](docs/glossary.md).
+
+| Course task | Folder | In short |
+|---|---|---|
+| 3. Product description (SRS) | [`docs/03-srs`](docs/03-srs/srs.md) | 25 functional and 6 non-functional requirements, 3 actors, Identity Management, high-level architecture |
+| 4. Architecture | [`docs/04-architecture`](docs/04-architecture/README.md) | Component and sequence diagrams, 3 ADRs: Razor Pages instead of SPA, microservices, cloud and serverless |
+| 5. Error handling | [`docs/05-error-handling`](docs/05-error-handling/README.md) | 18 API operations, error conventions, request and error examples, client reaction |
+| 6. Concurrency patterns | [`docs/06-concurrency`](docs/06-concurrency/README.md) | 6 scenarios: Optimistic Concurrency, Leader Election, Competing Consumers, Transactional Outbox, Idempotency Key, LWW-Element-Set |
+| 7. Data model | [`docs/07-data-model`](docs/07-data-model/README.md) | ER diagram, 10 entities and service records, data retention policy, consensus, batching, streaming, consistency |
+| 8. Resiliency | [`docs/08-resiliency`](docs/08-resiliency/README.md) | CID with 7 interactions, RMA workbook with 26 failure modes |
+| 9. Security | [`docs/09-security`](docs/09-security/README.md) | STRIDE threat models for 3 flows, 25 threats, top-10 mitigation plan |
+| 10. Deployment | [`docs/10-deployment`](docs/10-deployment/README.md) | AWS infrastructure diagram as code, resources, network, scaling |
+| 11. Analytics | [`docs/11-analytics`](docs/11-analytics/README.md) | 15 product metrics, photographer and client funnels |
+| 12. Monitoring and alerting | [`docs/12-monitoring`](docs/12-monitoring/README.md) | 14 operational metrics, 10 alerts, runbooks for critical alerts |
 
 ## Team
 
@@ -164,3 +204,5 @@ All design documents live in [`docs/`](docs/). Start with the [glossary](docs/gl
 | Yuliia | Zone A: accounts and galleries |
 | Alona | Zone B: upload and photo processing |
 | Uliana | Zone C: client access and selection |
+
+How we work with branches, issues and pull requests: [CONTRIBUTING.md](.github/CONTRIBUTING.md).
