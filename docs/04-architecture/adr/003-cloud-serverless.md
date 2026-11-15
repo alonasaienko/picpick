@@ -57,7 +57,7 @@
 | MinIO (оригінали та прев'ю) | Контейнер | Amazon S3 (MinIO сумісний із S3 API, змінюються лише налаштування) | Azure Blob Storage (інший API, потрібен адаптер) |
 | Образи контейнерів | Збираються локально | Amazon ECR | Azure Container Registry |
 | Секрети (паролі, ключі) | `.env` / змінні середовища | AWS Secrets Manager | Azure Key Vault |
-| Логи та метрики | Логи контейнерів | CloudWatch Logs і Metrics | Azure Monitor |
+| Логи та метрики | Логи контейнерів | Журнали й сигнал автомасштабування — CloudWatch; метрики й алерти — Amazon Managed Service for Prometheus і Amazon Managed Grafana ([п.10](../../10-deployment/README.md), [п.12](../../12-monitoring/README.md)) | Azure Monitor із керованим Prometheus і Azure Managed Grafana |
 | Роздача прев'ю клієнтам (за потреби) | Через Web App | Через Web App після перевірки чинності ShareLink; CloudFront перед S3 — можливе розширення після окремого узгодження механізму миттєвого відкликання | Через Web App після перевірки чинності ShareLink; Azure Front Door / CDN — можливе розширення після окремого узгодження механізму миттєвого відкликання |
 
 ### Масштабування за одночасних завантажень
