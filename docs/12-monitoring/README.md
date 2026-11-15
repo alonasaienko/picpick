@@ -11,6 +11,8 @@
 
 Prometheus раз на 15 с забирає метрики з усіх джерел (pull) і з тим самим інтервалом перевіряє правила алертів. Grafana будує дашборди з Prometheus. Alertmanager отримує від Prometheus алерти, що спрацювали, групує їх і надсилає сповіщення.
 
+У цільовому розгортанні на AWS ([п.10](../10-deployment/README.md)) це керовані сервіси: Prometheus — Amazon Managed Service for Prometheus (разом із правилами алертів і Alertmanager), Grafana — Amazon Managed Grafana. Журнали контейнерів і сигнал для автомасштабування йдуть у CloudWatch. Метрики, labels, пороги й маршрути сповіщень нижче від цього не змінюються.
+
 ```mermaid
 flowchart LR
     subgraph sources["Джерела метрик"]
